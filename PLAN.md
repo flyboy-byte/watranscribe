@@ -1,16 +1,12 @@
 # WAtranscribe → Flask migration & deployment plan
 
-**Status:** Steps 1-11 done. Full local verification with real Deepgram +
-Anthropic API keys and real audio (including a real WhatsApp voice note)
-passed. Post-implementation audit found and fixed 3 issues (Deepgram-error-as-
-transcript bug, an under-pinned `deepgram-sdk` version floor, and plaintext
-`APP_PASSWORD` — now a hashed `APP_PASSWORD_HASH`). Old Streamlit folder
-deleted (zip kept, gitignored); repo pushed to
-`https://github.com/flyboy-byte/watranscribe` (private). `deploy/` now
-reflects real VPS recon (see below), not assumed conventions. **Not yet done:
-actually deploying to the VPS** (DNS, systemd unit install, nginx site,
-certbot) — deploy.sh and deploy/DEPLOY.md are ready for that when the user
-wants to proceed.
+**Status: Deployed and live at https://transcribe.flyboybyte.com** (2026-07-16).
+All 11 implementation steps done, full local verification with real API keys
+and real audio passed, VPS recon-based deploy config written, and the actual
+deployment (DNS, systemd user unit, nginx site, certbot TLS) completed and
+verified. No password gate — open access, per explicit user decision.
+Remaining work is optional polish (real-browser check of the player/PWA/theme
+toggle) — see "Deployed" note near the bottom.
 **Goal:** Reorganize the existing Streamlit app (currently unpacked at
 `WAtranscribe-claude-public-app-clone-v1-u1ubpf/`, originally from
 `WAtranscribe-claude-public-app-clone-v1-u1ubpf.zip`) into a Flask app living
@@ -279,14 +275,22 @@ replacing the earlier assumed-convention drafts.
     gitignored. Repo initialized and pushed to
     `https://github.com/flyboy-byte/watranscribe` (private).
 
-### Remaining before this is actually live
+### Deployed (2026-07-16)
 
-- [ ] Add DNS A record: `transcribe.flyboybyte.com` → `51.81.80.126`.
-- [ ] Follow `deploy/DEPLOY.md`: clone to `~/watranscribe` on the VPS, real
-  `.env` with production API keys + a real `APP_PASSWORD_HASH`, install the
-  user systemd unit, install the nginx site, run certbot.
-- [ ] Verify in a real browser: waveform/word-click player, PWA
-  install + WhatsApp share-target on a phone, theme toggle persistence.
+**Live at https://transcribe.flyboybyte.com.** DNS A record added by the
+user; cloned to `~/watranscribe` on the VPS; production `.env` in place
+(real Deepgram + Anthropic keys, `FLASK_ENV=production`) — **no
+`APP_PASSWORD_HASH` set, by explicit user decision: the app is open to
+anyone, no login gate.** `transcribe.service` installed as a user unit
+(`systemctl --user enable --now`, confirmed `enabled` + lingering already on
+for `ubuntu`), nginx site installed and reloaded, `certbot --nginx` issued a
+real cert (expires 2026-10-14, auto-renews). Verified via curl: HTTPS 200,
+HTTP→HTTPS 301, security headers present, `/static/manifest.json` and
+`/static/sw.js` 200, `/history` 200.
+
+- [ ] Still worth doing when convenient: verify in a real browser
+  (waveform/word-click player, PWA install + WhatsApp share-target on an
+  actual phone, theme toggle persistence) — curl can't exercise these.
 
 ## Verification plan
 
