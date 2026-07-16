@@ -1,10 +1,16 @@
 # WAtranscribe → Flask migration & deployment plan
 
-**Status:** Steps 1-8 done (scaffold, DB, services, auth, transcribe route+player,
-history route, PWA assets, local smoke test all implemented and verified
-booting under both `flask`/test-client and `gunicorn`). Steps 9-11 (deploy
-files, doc updates, retiring the old Streamlit folder) still pending — resume
-there.
+**Status:** Steps 1-11 done. Full local verification with real Deepgram +
+Anthropic API keys and real audio (including a real WhatsApp voice note)
+passed. Post-implementation audit found and fixed 3 issues (Deepgram-error-as-
+transcript bug, an under-pinned `deepgram-sdk` version floor, and plaintext
+`APP_PASSWORD` — now a hashed `APP_PASSWORD_HASH`). Old Streamlit folder
+deleted (zip kept, gitignored); repo pushed to
+`https://github.com/flyboy-byte/watranscribe` (private). `deploy/` now
+reflects real VPS recon (see below), not assumed conventions. **Not yet done:
+actually deploying to the VPS** (DNS, systemd unit install, nginx site,
+certbot) — deploy.sh and deploy/DEPLOY.md are ready for that when the user
+wants to proceed.
 **Goal:** Reorganize the existing Streamlit app (currently unpacked at
 `WAtranscribe-claude-public-app-clone-v1-u1ubpf/`, originally from
 `WAtranscribe-claude-public-app-clone-v1-u1ubpf.zip`) into a Flask app living
@@ -184,29 +190,62 @@ preserve it once committed).
   as appropriate — the Streamlit version's `_set_cookie_js` was JS-based;
   Flask can set these natively via response headers, which also allows
   `HttpOnly` for the auth cookie (JS-set cookies can't be HttpOnly).
-- Run gunicorn as a non-root systemd user, `ProtectSystem=strict` /
-  `NoNewPrivileges=true` in the unit file where practical.
+- ~~Run gunicorn as a non-root systemd user, `ProtectSystem=strict` /
+  `NoNewPrivileges=true` in the unit file where practical.~~ Superseded by
+  actual VPS recon below — this box doesn't use per-app system users or
+  sandboxed system units for any project, so `deploy/transcribe.service`
+  matches the established `systemctl --user` pattern instead. Revisit only if
+  the user explicitly wants to harden beyond this box's existing convention.
 
-## Open questions to resolve at implementation time (not blocking, but decide before/while coding)
+## VPS recon findings (2026-07-16, resolves Open Question 4)
 
-1. **Database:** keep Postgres (matches original, good if other VPS projects
-   already share a Postgres instance) vs. switch default to SQLite for
-   simplicity on a single small VPS. Recommend: support both via
-   `DATABASE_URL` (SQLAlchemy handles either), default to a local SQLite file
-   under `instance/` if `DATABASE_URL` is unset, so first deploy doesn't
-   require standing up Postgres.
-2. **In-progress session storage:** for a multi-user public-ish deployment,
-   holding full base64 audio + transcripts in the signed Flask cookie session
-   won't scale (cookie size limits ~4KB). Recommend server-side session
-   store (Flask-Session with filesystem or Postgres backend) keyed by a
-   session id cookie, holding the same shape of data the Streamlit
-   `st.session_state` did.
-3. Whether to keep the original repo's zip / extracted Streamlit folder
-   around as a reference (`legacy/`) or delete outright once the Flask port
-   is verified working.
-4. Confirm real nginx `server_name`/cert path conventions on the actual VPS
-   before applying `deploy/nginx_transcribe.conf` — plan assumes standard
-   `/etc/nginx/sites-available/` + `certbot --nginx`.
+SSH'd into `ubuntu@flyboybyte.com` (51.81.80.126) and inspected the actual
+setup rather than assuming. Findings that changed the deploy plan:
+
+- **No system-wide systemd units, no dedicated per-app system user.**
+  Every project on this box (`budget`, `disc_tracker`, `moomoo`, etc.) runs
+  as the `ubuntu` user via **user-level systemd** (`~/.config/systemd/user/`,
+  managed with `systemctl --user`). Lingering is enabled
+  (`loginctl show-user ubuntu` → `Linger=yes`), so user units survive
+  reboot/logout without needing root units.
+- **Projects live directly in `/home/ubuntu/<project>/`** (not `/srv/`),
+  each with its own `.venv/`.
+- **nginx**: site files at `/etc/nginx/sites-available/<domain>` (no `.conf`
+  extension), minimal server blocks, TLS lines added by
+  `certbot --nginx` (don't hand-write them), a shared
+  `include snippets/security-headers.conf` (HSTS, X-Frame-Options,
+  X-Content-Type-Options, Referrer-Policy — no CSP anywhere on this box), and
+  one global `limit_req_zone ... zone=login` (in `/etc/nginx/nginx.conf`)
+  that every app's `/login` route reuses.
+- **Ports already in use**: 5757 (disc_tracker), 5758 (budget/uvicorn), 8080
+  (trading dashboard), 11111/22222 (OpenD). **5759** is free and continues
+  the existing numbering — used in `deploy/transcribe.service` and
+  `deploy/nginx_transcribe.conf`.
+- **Deploy pattern**: a per-repo `deploy.sh` (see `~/budget/deploy.sh` on the
+  VPS) that pushes to GitHub locally, then SSHes in, `git pull`s, reinstalls
+  deps, and `systemctl --user restart <name>.service`. `/home/logan/projects/trans/deploy.sh`
+  mirrors this.
+- Python 3.12.3 is available system-wide on the VPS — compatible with this
+  project's `requires-python = ">=3.11"`.
+- `transcribe.flyboybyte.com` has **no DNS record yet** — must be added
+  before running `certbot --nginx` (HTTP-01 challenge needs it resolvable).
+
+`deploy/transcribe.service`, `deploy/nginx_transcribe.conf`, and
+`deploy/DEPLOY.md` have all been rewritten to match the above exactly,
+replacing the earlier assumed-convention drafts.
+
+## Open questions — resolved
+
+1. **Database:** resolved — SQLAlchemy picks Postgres or SQLite from
+   `DATABASE_URL`, defaults to `instance/watranscribe.db` (SQLite) if unset.
+   No Postgres instance needed on the VPS for this app.
+2. **In-progress session storage:** resolved — server-side Flask-Session
+   (filesystem backend) keyed by a session-id cookie, holding the same
+   shape of data the Streamlit `st.session_state` did.
+3. **Old Streamlit folder/zip:** resolved — extracted folder deleted, zip
+   kept on disk (gitignored, reference only).
+4. **Real nginx/systemd conventions:** resolved — see "VPS recon findings"
+   above.
 
 ## Implementation order (for the resuming session)
 
@@ -229,13 +268,25 @@ preserve it once committed).
    under `gunicorn wsgi:app` (see verification notes below); upload/transcribe
    with *real* audio + real API keys was **not** exercised (no API keys
    available in this environment) — flagged for the user to verify manually.
-9. [ ] Write `deploy/transcribe.service`, `deploy/nginx_transcribe.conf`,
-   `deploy/DEPLOY.md`.
-10. [ ] Update root `CLAUDE.md` and `README.md` to describe the new Flask
-    architecture and deployment (existing `CLAUDE.md` at
-    `WAtranscribe-claude-public-app-clone-v1-u1ubpf/CLAUDE.md` documents the
-    *old* Streamlit architecture — supersede it, don't leave both).
-11. [ ] Retire the old Streamlit folder/zip per decision in Open Question 3.
+9. [x] Write `deploy/transcribe.service`, `deploy/nginx_transcribe.conf`,
+   `deploy/DEPLOY.md` — rewritten after real VPS recon (see above); also
+   added `deploy.sh` at the repo root matching this box's existing
+   redeploy pattern.
+10. [x] Wrote new root `CLAUDE.md` and `README.md` describing the Flask
+    architecture and deployment (old Streamlit `CLAUDE.md` no longer
+    exists — it was inside the deleted extracted folder).
+11. [x] Retired the old Streamlit folder (deleted); kept the zip on disk,
+    gitignored. Repo initialized and pushed to
+    `https://github.com/flyboy-byte/watranscribe` (private).
+
+### Remaining before this is actually live
+
+- [ ] Add DNS A record: `transcribe.flyboybyte.com` → `51.81.80.126`.
+- [ ] Follow `deploy/DEPLOY.md`: clone to `~/watranscribe` on the VPS, real
+  `.env` with production API keys + a real `APP_PASSWORD_HASH`, install the
+  user systemd unit, install the nginx site, run certbot.
+- [ ] Verify in a real browser: waveform/word-click player, PWA
+  install + WhatsApp share-target on a phone, theme toggle persistence.
 
 ## Verification plan
 
@@ -258,21 +309,36 @@ preserve it once committed).
   page renders with a CSRF token; wrong password shows "Incorrect password";
   5 wrong attempts triggers the lockout page; correct password sets the
   `wa_auth` cookie with `HttpOnly` + `SameSite=Lax` (and `Secure` when
-  `request.is_secure`/production) and redirects to `/`; with `APP_PASSWORD`
-  unset the gate is bypassed entirely (matches original behavior).
+  `request.is_secure`/production) and redirects to `/`; with
+  `APP_PASSWORD_HASH` unset the gate is bypassed entirely (matches original
+  behavior). Re-verified after the plaintext→hash fix with a real
+  `generate_password_hash()` value — login, wrong password, and lockout all
+  behave correctly against the hash.
 - `GET /` (transcribe/index) and `GET /history` render successfully once
   authed.
 - File upload extension validation: `.exe` rejected server-side with a flash
-  message; `.opus` accepted and flows through the (key-less) Deepgram call,
-  which fails gracefully and stores the error text as the transcript instead
-  of crashing the request.
+  message; `.opus` accepted.
 - SQLite auto-creation confirmed: `instance/watranscribe.db` created on
   first `init_db()` call with no `DATABASE_URL` set.
 - `gunicorn -w 1 -b 127.0.0.1:8931 wsgi:app` served `/`, `/history`,
   `/static/manifest.json`, `/static/sw.js` all with 200s.
-- **Not verified** (no `DEEPGRAM_API_KEY`/`ANTHROPIC_API_KEY` in this
-  environment): a real transcription round-trip, real Claude summarization,
-  the redo-summary/level-pill flow, multi-file catch-up summarization, the
-  in-browser waveform/word-click player (needs a browser, not just the test
-  client), the PWA share-target flow end-to-end on a phone, and the theme
-  toggle's client-side cookie + reload behavior in an actual browser.
+
+### Real-API verification pass (with real `DEEPGRAM_API_KEY`/`ANTHROPIC_API_KEY`)
+
+- Real transcription confirmed with a synthetic TTS clip and a real WhatsApp
+  voice note (`.opus`) — accurate transcript text + word-level timestamps.
+- Real Claude summarization confirmed — switched from `claude-sonnet-4-6` to
+  `claude-haiku-4-5-20251001` (far cheaper, plenty capable for this task) with
+  per-condensation-level `max_tokens` caps (150–1200) instead of a flat 8192;
+  verified good summary quality on both a short synthetic clip and the real
+  voice note.
+- Fixed a real bug found in this pass: Deepgram failures were being stored as
+  fake transcript text (`"Error: ..."`) and then handed to Claude to
+  "summarize" — now returns an explicit `error` field, flashed to the user,
+  and never summarized or saved as if it were real content.
+- Bumped `deepgram-sdk` floor from `>=3.0` to `>=7.0` — the code uses the v5+
+  API shape (`listen.v1.media.transcribe_file`) and the old floor could
+  resolve an incompatible major version on a fresh install.
+- **Still not verified** (needs a real browser, not just curl/test client):
+  the in-browser waveform/word-click player, the PWA share-target flow on an
+  actual phone, and the theme toggle's client-side cookie + reload behavior.

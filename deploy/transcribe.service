@@ -1,0 +1,13 @@
+[Unit]
+Description=WAtranscribe (Flask/gunicorn) — transcribe.flyboybyte.com
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/watranscribe
+ExecStart=/home/ubuntu/watranscribe/.venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5759 --timeout 120 wsgi:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
