@@ -1,12 +1,23 @@
 """History tab: list/view/delete/export endpoints."""
 import json
+from pathlib import Path
 
 from flask import Blueprint, Response, flash, redirect, render_template, session, url_for
 
 from app.models import delete_session, get_all_sessions, get_session_by_id, save_session
-from app.routes.transcribe import _build_player_context, _ensure_state
+from app.routes.transcribe import _build_player_context, _clean_summary_line, _ensure_state
 
 history_bp = Blueprint("history", __name__)
+
+
+def _short_filename(name: str, limit: int = 28) -> str:
+    """Truncate a filename for display without mangling its extension
+    (plain name[:limit] can cut mid-suffix, e.g. '....opus' -> '....o')."""
+    if len(name) <= limit:
+        return name
+    stem, suffix = Path(name).stem, Path(name).suffix
+    keep = max(limit - len(suffix) - 1, 1)
+    return f"{stem[:keep]}…{suffix}"
 
 
 @history_bp.route("/history", methods=["GET"])
@@ -25,12 +36,13 @@ def index():
         audio_list = sess.audio_files or []
         words_list = sess.word_timestamps or []
 
-        file_label = ", ".join(f[:28] for f in files) if files else "Untitled session"
+        file_label = ", ".join(_short_filename(f) for f in files) if files else "Untitled session"
         preview = ""
         if summs:
             first_sum = next((v for v in summs.values() if isinstance(v, str) and v.strip()), "")
             if first_sum:
-                preview = first_sum.strip().split("\n")[0][:120]
+                first_line = first_sum.strip().split("\n")[0]
+                preview = _clean_summary_line(first_line)[:120]
         if not preview and txs:
             preview = txs[0][:120] if txs[0] else ""
 

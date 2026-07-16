@@ -80,11 +80,11 @@
 {% if all_summary %}
 <div class="wa-lbl" style="display:block;margin-bottom:8px">&#10022; Catch-up &middot; All {{ n }} notes</div>
 <div class="wa-hero">
-  <p class="wa-tldr">{{ all_summary.strip().split('\n')[0].lstrip('•-*# ') }}</p>
+  <p class="wa-tldr">{{ all_summary.strip().split('\n')[0].strip('•-*# ') }}</p>
   <ul class="wa-points">
     {% for line in all_summary.strip().split('\n')[1:] %}
       {% if line.strip() %}
-      <li class="wa-point"><span class="wa-check">&#10003;</span><span>{{ line.strip().lstrip('•-*# ') }}</span></li>
+      <li class="wa-point"><span class="wa-check">&#10003;</span><span>{{ line.strip().strip('•-*# ') }}</span></li>
       {% endif %}
     {% endfor %}
   </ul>

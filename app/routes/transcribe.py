@@ -29,6 +29,17 @@ transcribe_bp = Blueprint("transcribe", __name__)
 
 LEVEL_LABELS = {1: "Quick", 2: "Brief", 3: "Balanced", 4: "Detailed", 5: "Full"}
 
+# Markdown decoration Claude sometimes wraps summary lines in (bold
+# sub-headers like "**Key Points:**", "# " headings, bullet markers). Bold
+# markers can land mid-line (e.g. "**Overall Theme:** the rest of the
+# sentence"), not just at the very start/end, so a plain .strip(chars) isn't
+# enough — strip "**" anywhere, then trim leading heading/bullet decoration.
+_MD_DECORATION = " *#•-"
+
+
+def _clean_summary_line(line: str) -> str:
+    return line.replace("**", "").strip(_MD_DECORATION).strip()
+
 _DEFAULTS = {
     "transcriptions": [],
     "file_names": [],
@@ -134,8 +145,8 @@ def _build_player_context(unique_id, file_name, audio_b64, words, summary_text):
     tldr, points = "", []
     if summary_text.strip():
         lines = [l.strip() for l in summary_text.strip().split("\n") if l.strip()]
-        tldr = lines[0].lstrip("•-*# ").strip() if lines else summary_text
-        points = [l.lstrip("•-*# ").strip() for l in lines[1:] if l.strip()]
+        tldr = _clean_summary_line(lines[0]) if lines else summary_text
+        points = [_clean_summary_line(l) for l in lines[1:] if l.strip()]
 
     return {
         "id": unique_id,
