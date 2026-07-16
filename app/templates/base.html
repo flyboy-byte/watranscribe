@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" class="{{ 'wa-light' if theme == 'light' else '' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>WAtranscribe</title>
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<meta name="theme-color" content="{{ '#eef1ee' if theme == 'light' else '#0f0f0f' }}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WAtranscribe">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<div class="wa-container">
+  <div class="wa-header">
+    <div class="wa-header-icon"><img src="{{ url_for('static', filename='icons/icon-512.png') }}" alt="WA"></div>
+    <div class="wa-htext">
+      <div class="wa-htitle">WAtranscribe</div>
+      <div class="wa-hsub">Transcribe &middot; Summarize</div>
+    </div>
+    <button class="wa-theme-btn" id="wa-theme-toggle" title="Switch theme" type="button">
+      <span id="wa-theme-icon">{{ '☀' if theme == 'light' else '☾' }}</span>
+    </button>
+  </div>
+
+  <div class="wa-tabs">
+    <a href="{{ url_for('transcribe.index') }}" class="{{ 'active' if request.endpoint == 'transcribe.index' else '' }}">Transcribe</a>
+    <a href="{{ url_for('history.index') }}" class="{{ 'active' if request.endpoint == 'history.index' else '' }}">History</a>
+  </div>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}
+        <div class="wa-flash">{{ m }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</div>
+
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+<script src="{{ url_for('static', filename='js/share-target.js') }}"></script>
+<script src="{{ url_for('static', filename='js/player.js') }}"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/static/sw.js', { scope: '/static/' })
+        .then(function (reg) { console.log('[PWA] SW registered:', reg.scope); })
+        .catch(function (err) { console.warn('[PWA] SW failed:', err); });
+    });
+  }
+</script>
+</body>
+</html>

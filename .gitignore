@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+instance/
+flask_session/
+*.egg-info/
+.DS_Store
+watranscribe.egg-info/
+
+# Legacy Streamlit source archive — kept on disk for reference, not tracked.
+WAtranscribe-claude-public-app-clone-v1-u1ubpf.zip

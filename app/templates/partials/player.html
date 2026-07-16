@@ -1,0 +1,69 @@
+{# Expects `player` in context: see app/routes/transcribe.py:_build_player_context #}
+<div class="wa-player" id="player-{{ player.id }}" data-player-id="{{ player.id }}">
+  {# Data passed as a JSON script island rather than string-interpolated into
+     HTML/JS — the transcript/summary text is never concatenated into an
+     inline <script> string, which is the XSS mitigation called for in
+     PLAN.md's "Interactive player" section. #}
+  <script type="application/json" class="wa-player-data">
+    {{ {
+        "words": player.words,
+        "full": player.full,
+      } | tojson | safe }}
+  </script>
+
+  {% if player.audio_b64 %}
+  <audio class="wa-real-audio" style="display:none" preload="metadata">
+    <source src="data:{{ player.mime }};base64,{{ player.audio_b64 }}" type="{{ player.mime }}">
+  </audio>
+  <div class="wa-audio">
+    <button class="wa-play" type="button" data-action="toggle-play">
+      <svg class="wa-ico-play" viewBox="0 0 24 24" width="15" height="15"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>
+      <svg class="wa-ico-pause" viewBox="0 0 24 24" width="13" height="13" style="display:none"><rect x="5" y="4" width="5" height="16" rx="1.4" fill="currentColor"/><rect x="14" y="4" width="5" height="16" rx="1.4" fill="currentColor"/></svg>
+    </button>
+    <div class="wa-wave" data-action="seek"></div>
+    <span class="wa-time"><span class="wa-cur">0:00</span><span class="wa-dur"> / <span class="wa-tot">0:00</span></span></span>
+  </div>
+  {% endif %}
+
+  {% if player.has_summary %}
+  <div class="wa-hero">
+    <div class="wa-hero-head">
+      <span class="wa-lbl">&#10022; Summary</span>
+    </div>
+    <p class="wa-tldr">{{ player.tldr }}</p>
+    {% if player.points %}
+    <ul class="wa-points">
+      {% for p in player.points %}
+      <li class="wa-point"><span class="wa-check">&#10003;</span><span>{{ p }}</span></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  <div class="wa-actions">
+    <button class="wa-act primary" type="button" data-action="copy">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h8"/></svg>
+      Copy
+    </button>
+    <button class="wa-act" type="button" data-action="share">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M8 7l4-4 4 4"/><path d="M5 12v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>
+      Share
+    </button>
+  </div>
+  {% endif %}
+
+  {% if player.has_words %}
+  <div class="wa-sheet-wrap">
+    <button class="wa-handle" type="button" data-action="toggle-sheet">
+      <span class="wa-grip"></span>
+      <div class="wa-handle-row">
+        <span class="wa-handle-lbl">Transcript</span>
+        <span class="wa-handle-cta">Tap to read &#9652;</span>
+      </div>
+    </button>
+    <div class="wa-sheet-body">
+      <div class="wa-words"><!-- rendered by player.js from the JSON words payload --></div>
+      <div class="wa-sheet-foot">Tap any word to jump the audio there</div>
+    </div>
+  </div>
+  {% endif %}
+</div>

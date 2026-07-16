@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" class="{{ 'wa-light' if theme == 'light' else '' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>WAtranscribe — Sign in</title>
+<meta name="theme-color" content="{{ '#eef1ee' if theme == 'light' else '#0f0f0f' }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<div class="wa-container au-screen">
+  <div class="au-brand">
+    <div class="au-logo"><img src="{{ url_for('static', filename='icons/icon-512.png') }}" alt="WAtranscribe"></div>
+    <div class="au-wordmark">WAtranscribe</div>
+    <div class="au-tagline">Transcribe &middot; Summarize</div>
+  </div>
+
+  {% if locked_out_for and locked_out_for > 0 %}
+  <p style="color:var(--muted);font-size:13.5px;">Too many failed attempts. Try again in {{ locked_out_for }}s.</p>
+  {% else %}
+  <form method="POST" action="{{ url_for('auth.login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="au-field-wrap">
+      <input type="password" name="password" placeholder="Password" class="{{ 'err' if error else '' }}" autofocus required>
+      <button class="au-submit" type="submit">&rarr;</button>
+    </div>
+    <div class="au-err-msg {{ '' if error else 'hidden' }}">{{ error or '' }}</div>
+  </form>
+  {% endif %}
+</div>
+</body>
+</html>

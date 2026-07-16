@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if not has_api_key %}
+<div class="no-api-banner"><strong>Summaries unavailable</strong> — set <code>ANTHROPIC_API_KEY</code>.</div>
+{% endif %}
+
+{% if wa_shared %}
+<div class="wa-shared-banner">Shared audio detected — loading automatically...</div>
+{% endif %}
+
+<form id="wa-upload-form" method="POST" action="{{ url_for('transcribe.upload') }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label class="wa-dropzone" for="wa-file-input">
+    Drop audio files here or tap to browse
+    <input type="file" id="wa-file-input" name="files" multiple
+           accept=".opus,.m4a,.mp3,.wav,.ogg,.oga,audio/*"
+           onchange="if(this.files.length){this.form.submit();}">
+  </label>
+</form>
+
+{% if n == 0 %}
+<div class="wa-empty">
+  <p class="wa-empty-note">Share a voice message from WhatsApp — or upload an audio file above — to transcribe and summarize it.</p>
+  <a class="wa-share" href="#" onclick="return false;">
+    <div class="wa-share-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M8 7l4-4 4 4"/><path d="M5 12v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg></div>
+    <div class="wa-share-tx"><strong>Share from WhatsApp</strong><span>Open a voice note and tap Share</span></div>
+    <div class="wa-share-go"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+  </a>
+</div>
+{% else %}
+
+{% if n > 1 %}
+<div class="wa-clipstrip">
+  {% for fname in file_names %}
+  <a class="wa-clip {{ 'on' if loop.index0 == selected_idx else '' }}" href="{{ url_for('transcribe.index', file=loop.index0) }}">{{ fname[:18] }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<form method="POST" action="{{ url_for('transcribe.clear') }}" style="text-align:right;margin-bottom:10px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="wa-btn" type="submit">Clear</button>
+</form>
+
+<div class="wa-filemeta">
+  <span class="wa-dot"></span>
+  <span class="wa-fname">{{ file_names[selected_idx] }}</span>
+</div>
+
+{% if player %}
+{% include "partials/player.html" %}
+{% endif %}
+
+{% if has_api_key %}
+<form method="POST" action="{{ url_for('transcribe.summarize', idx=selected_idx) }}" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="wa-levelbar">
+    {% for lvl, label in level_labels.items() %}
+    <input type="radio" name="level" id="lvl-{{ lvl }}" value="{{ lvl }}" {{ 'checked' if lvl == condensation_level else '' }} onchange="this.form.submit()">
+    <label for="lvl-{{ lvl }}">{{ label }}</label>
+    {% endfor %}
+  </div>
+  <button class="wa-btn primary" type="submit">Redo</button>
+</form>
+{% endif %}
+
+<details class="wa-expander">
+  <summary>View / edit transcript</summary>
+  <form method="POST" action="{{ url_for('transcribe.update_transcript', idx=selected_idx) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <textarea class="wa-textarea" name="text">{{ transcript }}</textarea>
+    <button class="wa-btn" type="submit" style="margin-top:8px;">Save</button>
+  </form>
+</details>
+
+{% if has_api_key and n > 1 %}
+<hr class="wa-sep">
+
+{% if all_summary %}
+<div class="wa-lbl" style="display:block;margin-bottom:8px">&#10022; Catch-up &middot; All {{ n }} notes</div>
+<div class="wa-hero">
+  <p class="wa-tldr">{{ all_summary.strip().split('\n')[0].lstrip('•-*# ') }}</p>
+  <ul class="wa-points">
+    {% for line in all_summary.strip().split('\n')[1:] %}
+      {% if line.strip() %}
+      <li class="wa-point"><span class="wa-check">&#10003;</span><span>{{ line.strip().lstrip('•-*# ') }}</span></li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form method="POST" action="{{ url_for('transcribe.summarize_all') }}" style="display:flex;gap:8px;align-items:center;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="wa-levelbar">
+    {% for lvl, label in level_labels.items() %}
+    <input type="radio" name="level" id="alllvl-{{ lvl }}" value="{{ lvl }}" {{ 'checked' if lvl == condensation_level else '' }}>
+    <label for="alllvl-{{ lvl }}">{{ label }}</label>
+    {% endfor %}
+  </div>
+  <button class="wa-btn primary" type="submit">Summarize All</button>
+</form>
+{% endif %}
+
+{% endif %}
+{% endblock %}
