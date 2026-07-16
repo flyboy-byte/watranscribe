@@ -18,17 +18,11 @@ def create_app():
     Session(app)
     CSRFProtect(app)
 
-    from app.db import init_db
-
-    init_db(app)
-
     from app.auth import auth_bp, enforce_password_gate
     from app.routes.transcribe import transcribe_bp
-    from app.routes.history import history_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(transcribe_bp)
-    app.register_blueprint(history_bp)
 
     app.before_request(enforce_password_gate)
 

@@ -5,8 +5,33 @@ All 11 implementation steps done, full local verification with real API keys
 and real audio passed, VPS recon-based deploy config written, and the actual
 deployment (DNS, systemd user unit, nginx site, certbot TLS) completed and
 verified. No password gate — open access, per explicit user decision.
-Remaining work is optional polish (real-browser check of the player/PWA/theme
-toggle) — see "Deployed" note near the bottom.
+
+**Product pivot (2026-07-16, post-launch):** a real-browser UI audit (see
+below) surfaced both cosmetic bugs and a real product problem — the app was
+persisting other people's WhatsApp voice messages to a database
+indefinitely via the History feature, which the user correctly called out
+as a bad default for a tool anyone can upload personal audio to. Response:
+**removed the database and History feature entirely.** `app/db.py`,
+`app/models.py`, `app/routes/history.py`, `app/templates/history.html` are
+deleted; `sqlalchemy`/`psycopg2-binary` dropped from `pyproject.toml`.
+Everything now lives only in server-side session storage
+(`PERMANENT_SESSION_LIFETIME` cut from 7 days to 6 hours) with a cron job
+(see `deploy/DEPLOY.md`) to purge expired session files promptly — there is
+no persistent storage of user audio anywhere in this app, by design. Also
+decoupled transcription from summarization: uploading only transcribes now;
+summarization happens only when the user explicitly picks a condensation
+level (previously it auto-summarized immediately on upload). Added a
+privacy banner to the page ("we don't keep your data"). Also fixed 3 bugs
+found during the same UI audit: stray markdown `**` artifacts in every
+summary bullet (Claude's mid-line bold markers weren't fully stripped),
+the history preview leaking a raw `"# Summary"` heading (moot now that
+history is gone), and filenames truncating mid-extension.
+
+**Not yet done:** redeploying this pivot to the live VPS (code is committed
+locally; the production instance still runs the pre-pivot build with the
+old database, including one real test session saved during the UI audit —
+delete `~/watranscribe/instance/watranscribe.db` on the VPS as part of
+deploying this, don't leave it behind).
 **Goal:** Reorganize the existing Streamlit app (currently unpacked at
 `WAtranscribe-claude-public-app-clone-v1-u1ubpf/`, originally from
 `WAtranscribe-claude-public-app-clone-v1-u1ubpf.zip`) into a Flask app living

@@ -198,14 +198,9 @@ def upload():
         session["transcriptions"].append(text)
         session["audio_files"].append(base64.b64encode(raw).decode())
         session["word_timestamps"].append(result.get("words", []))
-
-        if not error and has_api_key() and text.strip():
-            try:
-                session["summaries"][str(idx)] = summarize_text(
-                    text, condensation=session["condensation_level"]
-                )
-            except Exception:
-                pass
+        # Transcription only — summarization is a deliberate, explicit choice
+        # the user makes afterward (pick a condensation level, then
+        # Summarize), not an automatic side effect of uploading.
 
     session["selected_file_index"] = len(session["file_names"]) - 1
     session.modified = True

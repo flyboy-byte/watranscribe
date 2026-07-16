@@ -31,12 +31,7 @@ class Config:
         # Fine for local dev only — sessions won't survive a process restart.
         SECRET_KEY = "dev-only-insecure-secret-key-change-me"
 
-    # --- Database ---------------------------------------------------------
-    # Open Question 1 resolution: support both Postgres and SQLite via
-    # SQLAlchemy. Default to a local SQLite file under instance/ so a first
-    # deploy doesn't require standing up Postgres.
     INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
-    DATABASE_URL = os.environ.get("DATABASE_URL") or f"sqlite:///{INSTANCE_DIR / 'watranscribe.db'}"
 
     # --- Auth / password gate ---------------------------------------------
     # Salted hash, not the raw password — generate with:
@@ -50,17 +45,20 @@ class Config:
     )
 
     # --- Session storage ----------------------------------------------------
-    # Open Question 2 resolution: server-side session store (Flask-Session,
-    # filesystem backend) keyed by a session-id cookie, holding the same
-    # shape of data the old st.session_state did (transcriptions, file_names,
-    # summaries, audio_files as base64, word_timestamps, selected_file_index,
-    # condensation_level). Filesystem backend is fine for a single VPS.
+    # This app keeps no database and no history — everything (transcript,
+    # summary, audio-as-base64, word timestamps) lives only in this
+    # server-side session store (Flask-Session, filesystem backend) for the
+    # duration of one working session, then expires. Nothing is ever
+    # written to a database. Kept short (a few hours) so the app's privacy
+    # notice ("we don't keep your data") is actually true on disk, not just
+    # in the UI copy — see deploy/DEPLOY.md for the cron job that purges
+    # expired session files promptly rather than waiting on lazy expiry.
     SESSION_TYPE = "filesystem"
     SESSION_FILE_DIR = str(INSTANCE_DIR / "flask_session")
     SESSION_PERMANENT = True
     SESSION_USE_SIGNER = True
     SESSION_COOKIE_NAME = "wa_session"
-    PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 7  # 7 days
+    PERMANENT_SESSION_LIFETIME = 60 * 60 * 6  # 6 hours
 
     # --- Cookie security flags ----------------------------------------------
     SESSION_COOKIE_HTTPONLY = True

@@ -24,7 +24,7 @@ python3 -m venv .venv
 
 cp .env.example .env
 # Edit .env: SECRET_KEY, DEEPGRAM_API_KEY, ANTHROPIC_API_KEY, APP_PASSWORD_HASH,
-# DATABASE_URL (optional — SQLite default is fine here), FLASK_ENV=production
+# FLASK_ENV=production
 chmod 600 .env
 ```
 
@@ -70,18 +70,36 @@ The config reuses this box's existing shared `zone=login` rate-limit bucket
 `/login`) and the shared `snippets/security-headers.conf` include — no new
 global nginx config needed.
 
-## 4. Point DNS
+## 4. Session-purge cron job (privacy: no data retention)
+
+This app has no database — everything lives only in server-side session
+files (`instance/flask_session/`) that expire after
+`PERMANENT_SESSION_LIFETIME` (6 hours, see `app/config.py`). Flask-Session's
+filesystem backend only checks/deletes expiry lazily, on next access to that
+same session — an abandoned session (user never returns) would otherwise
+sit on disk indefinitely with someone's audio in it. Add a cron job so
+expired files are actually removed promptly, matching the "we don't keep
+your data" privacy notice on the page:
+
+```bash
+crontab -e
+# add:
+15 * * * * find /home/ubuntu/watranscribe/instance/flask_session -type f -mmin +360 -delete
+```
+
+## 5. Point DNS
 
 `transcribe.flyboybyte.com` has no A record yet — add one pointing at
 `51.81.80.126` before running certbot (certbot's HTTP-01 challenge needs it
 resolvable first).
 
-## 5. Verify end-to-end
+## 6. Verify end-to-end
 
 - Visit `https://transcribe.flyboybyte.com` — should redirect to `/login` if
   `APP_PASSWORD_HASH` is set.
-- Log in, upload a real audio file, confirm transcription + summary +
-  history all work with production API keys.
+- Log in, upload a real audio file, confirm transcription happens
+  immediately and a summary is generated only after you pick a
+  condensation level — with production API keys.
 - `journalctl --user -u transcribe.service -f` while testing.
 - `curl -I https://transcribe.flyboybyte.com` — confirm HSTS/X-Frame-Options
   etc. from the shared security-headers snippet are present.

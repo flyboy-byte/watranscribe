@@ -1,16 +1,21 @@
 # WAtranscribe
 
-A mobile-first web app that transcribes WhatsApp voice messages and generates AI-powered summaries. Share audio straight from WhatsApp via the installable PWA, or upload files manually — WAtranscribe transcribes them with word-level timestamps and can condense long voice notes into summaries at five levels of detail.
+A mobile-first web app that transcribes WhatsApp voice messages and generates AI-powered summaries. Share audio straight from WhatsApp via the installable PWA, or upload files manually — WAtranscribe transcribes them with word-level timestamps and lets you generate a summary at whatever condensation level you choose.
 
 Flask app, deployed at **transcribe.flyboybyte.com**.
 
+**Privacy by design: there is no database.** Everything (audio, transcript,
+summary) lives only in server-side session storage for the duration of one
+browsing session (a few hours), then expires — nothing is ever persisted
+long-term. See `app/config.py`'s `PERMANENT_SESSION_LIFETIME` and
+`deploy/DEPLOY.md`'s session-purge cron job.
+
 ## Features
 
-- **Automatic transcription** — Deepgram Nova-2 with smart formatting, punctuation, and word-level timestamps
+- **Automatic transcription** — Deepgram Nova-2 with smart formatting, punctuation, and word-level timestamps, as soon as you upload
+- **Explicit, opt-in summarization** — nothing is summarized automatically; pick a condensation level (1 = one-liner, 5 = comprehensive) and Claude (Haiku) generates it on demand
 - **Interactive playback** — click any word in a transcript to jump to that moment in the audio
-- **AI summaries** — Claude (Haiku) generates summaries with an adjustable condensation level (1 = one-liner, 5 = comprehensive)
 - **Share from WhatsApp** — install as a PWA and share voice notes directly to the app via the Web Share Target API
-- **History** — sessions (transcripts, summaries, audio) are stored in SQLite/Postgres for later review and export (TXT/JSON)
 - **Password gate** — set `APP_PASSWORD_HASH` to protect the app behind a password
 
 ## Requirements
@@ -42,7 +47,6 @@ See `.env.example` for the full list and generation commands. Notably:
 | `SECRET_KEY` | Yes in production | Flask session signing / CSRF |
 | `DEEPGRAM_API_KEY` | Yes | Deepgram transcription |
 | `ANTHROPIC_API_KEY` | For summaries | Claude summarization |
-| `DATABASE_URL` | No | Postgres DSN; defaults to local SQLite under `instance/` |
 | `APP_PASSWORD_HASH` | No | Enables the password gate — must be a werkzeug hash, not plaintext |
 | `FLASK_ENV` | No | Set to `production` on the VPS |
 
@@ -52,9 +56,8 @@ See `.env.example` for the full list and generation commands. Notably:
 |---|---|
 | `app/__init__.py` | Flask application factory |
 | `app/auth.py` | Password gate (hashed password, lockout, CSRF) |
-| `app/db.py`, `app/models.py` | SQLAlchemy engine + `TranscriptionSession` model |
 | `app/services/` | Deepgram client, Claude client, summary-to-timestamp mapper |
-| `app/routes/` | Transcribe and history blueprints |
+| `app/routes/transcribe.py` | Upload/transcribe/summarize/clear — the only blueprint besides auth |
 | `app/templates/`, `app/static/` | Jinja templates, CSS, JS, PWA assets |
 | `deploy/` | systemd unit, nginx config, deployment steps |
 | `PLAN.md` | Migration/implementation plan and status |

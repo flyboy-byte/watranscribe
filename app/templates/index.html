@@ -61,7 +61,7 @@
     <label for="lvl-{{ lvl }}">{{ label }}</label>
     {% endfor %}
   </div>
-  <button class="wa-btn primary" type="submit">Redo</button>
+  <button class="wa-btn primary" type="submit">{{ 'Redo' if player and player.has_summary else 'Summarize' }}</button>
 </form>
 {% endif %}
 

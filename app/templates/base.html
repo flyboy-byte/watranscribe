@@ -25,10 +25,12 @@
     </button>
   </div>
 
-  <div class="wa-tabs">
-    <a href="{{ url_for('transcribe.index') }}" class="{{ 'active' if request.endpoint == 'transcribe.index' else '' }}">Transcribe</a>
-    <a href="{{ url_for('history.index') }}" class="{{ 'active' if request.endpoint == 'history.index' else '' }}">History</a>
-  </div>
+  <p class="wa-privacy">
+    <span class="wa-privacy-ic">&#128274;</span>
+    We don't keep your data. Audio and transcripts exist only for this
+    browser session and are never saved to a database — closing the tab or
+    hitting <strong>Clear</strong> erases them immediately.
+  </p>
 
   {% with messages = get_flashed_messages() %}
     {% if messages %}
