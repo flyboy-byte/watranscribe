@@ -77,6 +77,7 @@
     }
 
     const audio = root.querySelector(".wa-real-audio");
+    const errEl = root.querySelector(".wa-player-err");
     const waveEl = root.querySelector(".wa-wave");
     const playBtn = root.querySelector('[data-action="toggle-play"]');
     const icoPlay = root.querySelector(".wa-ico-play");
@@ -108,7 +109,28 @@
       icoPause.style.display = playing ? "" : "none";
     }
 
+    const MEDIA_ERROR_NAMES = {
+      1: "MEDIA_ERR_ABORTED",
+      2: "MEDIA_ERR_NETWORK",
+      3: "MEDIA_ERR_DECODE",
+      4: "MEDIA_ERR_SRC_NOT_SUPPORTED",
+    };
+
+    function showError(msg) {
+      console.error("[player]", msg);
+      if (errEl) {
+        errEl.textContent = msg;
+        errEl.style.display = "";
+      }
+      setPlayingIcon(false);
+    }
+
     if (audio) {
+      audio.addEventListener("error", function () {
+        const err = audio.error;
+        const name = err ? MEDIA_ERROR_NAMES[err.code] || ("code " + err.code) : "unknown";
+        showError("Audio failed to load (" + name + "). Try re-uploading the file.");
+      });
       audio.addEventListener("timeupdate", function () {
         if (curEl) curEl.textContent = fmtTime(audio.currentTime);
         updateBars();
@@ -130,7 +152,11 @@
       playBtn.addEventListener("click", function () {
         if (audio.paused) {
           if (audio.currentTime >= audio.duration) audio.currentTime = 0;
-          audio.play();
+          audio.play().then(function () {
+            if (errEl) errEl.style.display = "none";
+          }).catch(function (err) {
+            showError("Playback blocked: " + err.message);
+          });
           setPlayingIcon(true);
         } else {
           audio.pause();
@@ -154,8 +180,10 @@
         if (!isFinite(start)) return;
         const seekAndPlay = function () {
           audio.currentTime = start;
-          audio.play().catch(function (err) {
-            console.warn("[player] playback failed", err);
+          audio.play().then(function () {
+            if (errEl) errEl.style.display = "none";
+          }).catch(function (err) {
+            showError("Playback blocked: " + err.message);
           });
           setPlayingIcon(true);
         };

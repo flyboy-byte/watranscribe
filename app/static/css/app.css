@@ -273,6 +273,11 @@ hr.wa-sep { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 .wb { flex: 1; min-width: 0; border-radius: 3px; background: var(--wave); transition: background .1s; }
 .wb.on { background: var(--grn); }
 .wa-time { font-size: 12px; color: var(--text); font-variant-numeric: tabular-nums; flex: 0 0 auto; font-weight: 600; white-space: nowrap; }
+.wa-player-err {
+  background: rgba(239,83,80,.10); border: 1px solid rgba(239,83,80,.35);
+  color: #ef5350; border-radius: var(--radius); padding: 8px 12px;
+  font-size: 12px; margin-bottom: 8px;
+}
 .wa-dur { color: var(--muted); font-weight: 500; }
 .wa-sheet-wrap { background: var(--surface); border-radius: 16px 16px 0 0; border-top: 1.5px solid var(--border); box-shadow: var(--shadow); margin-top: 8px; }
 .wa-handle { padding: 10px 14px 8px; cursor: pointer; width: 100%; background: none; border: none; text-align: left; color: inherit; font: inherit; display: block; }
