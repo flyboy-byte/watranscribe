@@ -10,3 +10,7 @@ watranscribe.egg-info/
 
 # Legacy Streamlit source archive — kept on disk for reference, not tracked.
 WAtranscribe-claude-public-app-clone-v1-u1ubpf.zip
+
+# watranscribe-bot lives here on disk but is its own git repo/GitHub project —
+# deliberately isolated (own deploy unit/secrets), not part of this repo.
+watranscribe-bot/

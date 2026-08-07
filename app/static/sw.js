@@ -1,4 +1,4 @@
-const CACHE_NAME = 'watranscribe-v3';
+const CACHE_NAME = 'watranscribe-v4';
 const IDB_NAME   = 'watranscribe-shared-files';
 const IDB_STORE  = 'files';
 
