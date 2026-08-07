@@ -96,6 +96,9 @@ shows v1/v2/v3 all pass.
 Released: https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.2
 (v1.0.0 and v1.0.1 left up for history but are known-broken — use v1.0.2.)
 
+**Confirmed working end-to-end 2026-08-07**: installed clean, opens
+full-screen, and sharing a voice note from WhatsApp to the app works.
+
 ## To resume
 
 1. On the phone, download `app-release-signed.apk` from
