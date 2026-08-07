@@ -76,29 +76,39 @@ built file: `387fca79b4ea4dc7f647672e6d8e4b8bafc62a32eeaf723749aa141e4abf341b`).
 Sent to Logan's phone via chat file transfer; install failed with Android's
 generic "problem parsing the package" error, which — combined with a clean
 local verification — points to the chat transfer corrupting/truncating the
-file, not a build defect. **Next step: install via `adb install` instead of
-a chat file transfer**, once the phone is connected (USB debugging or
-wireless debugging). Local `adb` is already set up
-(`~/Android/Sdk/platform-tools/adb`), just needs the device connected —
-`adb devices -l` showed nothing attached as of the last check.
+file, not a build defect.
+
+**2026-08-07**: project moved to `/home/logan/projects/trans/watranscribe-twa/`
+(nested inside `trans/` alongside `watranscribe-bot/`, same "own git repo
+nested on disk" pattern — see `trans/.gitignore`), pushed to its own GitHub
+repo (`https://github.com/flyboy-byte/watranscribe-twa`, private), and the
+built APK attached to a GitHub Release
+(https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.0) so it
+can be downloaded directly on the phone via browser — sidesteps the chat
+transfer corruption entirely, no `adb` needed. Still worth keeping `adb
+install` as a fallback if the Release download somehow also fails.
 
 ## To resume
 
-1. Connect phone (USB debugging or wireless debugging via Developer
-   options), confirm with `adb devices -l`.
-2. `adb install -r /home/logan/projects/watranscribe-twa/app-release-signed.apk`
-3. Open the app once, confirm it launches full-screen (no address bar) —
-   this is the actual asset-links verification working.
-4. Test: share a real voice note to it from WhatsApp or Signal.
-5. If the intent-filter still doesn't show up in the OS share sheet after
-   a real ADB install, that's a genuine new bug worth investigating
-   (unlike the previous WebAPK-minting dead end, which was environmental,
-   not fixable from this side).
+1. On the phone, open
+   https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.0 and
+   download `app-release-signed.apk` directly (avoids the chat-transfer
+   corruption issue from the first attempt).
+2. Install it, open the app once, confirm it launches full-screen (no
+   address bar) — this is the actual asset-links verification working.
+3. Test: share a real voice note to it from WhatsApp or Signal.
+4. If the intent-filter still doesn't show up in the OS share sheet after
+   a clean install, that's a genuine new bug worth investigating (unlike
+   the previous WebAPK-minting dead end, which was environmental, not
+   fixable from this side).
+5. Fallback if the Release download also fails: `adb install -r
+   app-release-signed.apk` with the phone connected via USB/wireless
+   debugging (`adb devices -l` to confirm connection first).
 
 ## Rebuilding after a source change
 
 ```bash
-cd ~/projects/watranscribe-twa
+cd ~/projects/trans/watranscribe-twa
 node gen.js   # regenerates twa-manifest.json + project from the live manifest.json
 STOREPASS=$(grep -E '^RELEASE_STORE_PASSWORD=' ~/projects/drag-tree/android/local.properties | cut -d= -f2-)
 KEYPASS=$(grep -E '^RELEASE_KEY_PASSWORD=' ~/projects/drag-tree/android/local.properties | cut -d= -f2-)
