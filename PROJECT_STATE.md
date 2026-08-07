@@ -45,7 +45,6 @@ same day; Logan confirmed it was rotated in Meta's dashboard before parking. No 
 on resume.
 
 ## Known issues
-- Token exposure above — needs explicit confirmation/rotation.
 - Graph API version is not pinned in `app/config.py` yet.
 - No automated tests were ever run against a real Meta account (all fixtures/mocks).
 
@@ -55,11 +54,10 @@ logic (no new inbound path into the production Flask app), signature-validated w
 None of this has been exercised against real traffic yet, so there is nothing to audit for actual
 privacy behavior — only the design has been reviewed, not a running system.
 
-## Next three tasks (in order, on resume)
-1. Confirm/rotate the exposed Meta access token (see Secrets section above).
-2. Finish "Register your WhatsApp phone number" in Meta's dashboard (Step 2) using the existing
+## Next two tasks (in order, on resume)
+1. Finish "Register your WhatsApp phone number" in Meta's dashboard (Step 2) using the existing
    test number — no new/real business number is needed for this.
-3. Deploy to the VPS: new systemd `--user` unit, new port, `bot.flyboybyte.com` subdomain +
+2. Deploy to the VPS: new systemd `--user` unit, new port, `bot.flyboybyte.com` subdomain +
    nginx server block + certbot cert (see `DECISIONS.md` D-011), then register the webhook URL
    with Meta and send one real test voice note end-to-end.
 
