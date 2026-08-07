@@ -1,0 +1,9 @@
+node_modules/
+build/
+app/build/
+.gradle/
+*.apk
+*.aab
+*.idsig
+local.properties
+.cxx/
