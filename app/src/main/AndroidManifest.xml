@@ -152,17 +152,15 @@
                     
                         <data android:mimeType="audio/*" />
                     
-                        <data android:mimeType=".opus" />
+                        <data android:mimeType="audio/opus" />
                     
-                        <data android:mimeType=".m4a" />
+                        <data android:mimeType="audio/mp4" />
                     
-                        <data android:mimeType=".mp3" />
+                        <data android:mimeType="audio/mpeg" />
                     
-                        <data android:mimeType=".wav" />
+                        <data android:mimeType="audio/wav" />
                     
-                        <data android:mimeType=".ogg" />
-                    
-                        <data android:mimeType=".oga" />
+                        <data android:mimeType="audio/ogg" />
                     
                 </intent-filter>
             

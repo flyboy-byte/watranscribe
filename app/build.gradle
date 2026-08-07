@@ -51,12 +51,12 @@ def twaManifest = [
 ]
 
 android {
-    compileSdkVersion 35
+    compileSdkVersion 36
     namespace "com.flyboybyte.watranscribe"
     defaultConfig {
         applicationId "com.flyboybyte.watranscribe"
         minSdkVersion 21
-        targetSdkVersion 35
+        targetSdkVersion 36
         versionCode 1
         versionName "1"
 
@@ -86,7 +86,7 @@ android {
 
         
             // The data for the app to support web share target.
-            resValue "string", "shareTarget", '{\\"action\\":\\"https://transcribe.flyboybyte.com/static/share\\",\\"method\\":\\"POST\\",\\"enctype\\":\\"multipart/form-data\\",\\"params\\":{\\"files\\":[{\\"name\\":\\"audio\\",\\"accept\\":[\\"audio/*\\",\\".opus\\",\\".m4a\\",\\".mp3\\",\\".wav\\",\\".ogg\\",\\".oga\\"]}]}}'
+            resValue "string", "shareTarget", '{\\"action\\":\\"https://transcribe.flyboybyte.com/static/share\\",\\"method\\":\\"POST\\",\\"enctype\\":\\"multipart/form-data\\",\\"params\\":{\\"files\\":[{\\"name\\":\\"audio\\",\\"accept\\":[\\"audio/*\\",\\"audio/opus\\",\\"audio/mp4\\",\\"audio/mpeg\\",\\"audio/wav\\",\\"audio/ogg\\"]}]}}'
         
 
         // The hostname is used when building the intent-filter, so the TWA is able to
@@ -208,15 +208,9 @@ repositories {
     
 }
 
-configurations.all {
-    resolutionStrategy {
-        force 'androidx.browser:browser:1.8.0'
-    }
-}
-
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-
+    
         implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
-
+    
 }
