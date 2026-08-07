@@ -88,6 +88,7 @@
     const sheetCta = root.querySelector(".wa-handle-cta");
     const copyBtn = root.querySelector('[data-action="copy"]');
     const shareBtn = root.querySelector('[data-action="share"]');
+    const copyTranscriptBtn = root.querySelector('[data-action="copy-transcript"]');
 
     if (waveEl) buildWaveform(waveEl, hashStr(root.dataset.playerId || "wa"));
     if (wordsContainer && data.words) renderWords(wordsContainer, data.words);
@@ -149,9 +150,24 @@
       wordsContainer.addEventListener("click", function (e) {
         const target = e.target.closest(".wd");
         if (!target) return;
-        audio.currentTime = parseFloat(target.dataset.start);
-        audio.play();
-        setPlayingIcon(true);
+        const start = parseFloat(target.dataset.start);
+        if (!isFinite(start)) return;
+        const seekAndPlay = function () {
+          audio.currentTime = start;
+          audio.play().catch(function (err) {
+            console.warn("[player] playback failed", err);
+          });
+          setPlayingIcon(true);
+        };
+        // On a fresh page load the <audio> element may not have finished
+        // reading its data: URI yet (readyState 0) — setting currentTime
+        // before that silently no-ops on some mobile browsers instead of
+        // queuing it, so wait for metadata first.
+        if (audio.readyState >= 1) {
+          seekAndPlay();
+        } else {
+          audio.addEventListener("loadedmetadata", seekAndPlay, { once: true });
+        }
       });
     }
 
@@ -165,19 +181,22 @@
       });
     }
 
-    if (copyBtn) {
-      copyBtn.addEventListener("click", function () {
-        if (navigator.clipboard && data.full) {
-          const orig = copyBtn.innerHTML;
-          navigator.clipboard.writeText(data.full).then(function () {
-            copyBtn.textContent = "Copied!";
-            setTimeout(function () {
-              copyBtn.innerHTML = orig;
-            }, 1200);
-          });
-        }
+    function wireCopyButton(btn, text) {
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        if (!navigator.clipboard || !text) return;
+        const orig = btn.innerHTML;
+        navigator.clipboard.writeText(text).then(function () {
+          btn.textContent = "Copied!";
+          setTimeout(function () {
+            btn.innerHTML = orig;
+          }, 1200);
+        });
       });
     }
+
+    wireCopyButton(copyBtn, data.full);
+    wireCopyButton(copyTranscriptBtn, data.transcript);
 
     if (shareBtn) {
       shareBtn.addEventListener("click", function () {

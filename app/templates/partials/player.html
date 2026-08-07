@@ -8,6 +8,7 @@
     {{ {
         "words": player.words,
         "full": player.full,
+        "transcript": player.transcript,
       } | tojson | safe }}
   </script>
 
@@ -62,7 +63,13 @@
     </button>
     <div class="wa-sheet-body">
       <div class="wa-words"><!-- rendered by player.js from the JSON words payload --></div>
-      <div class="wa-sheet-foot">Tap any word to jump the audio there</div>
+      <div class="wa-sheet-foot">
+        <span>Tap any word to jump the audio there</span>
+        <button class="wa-act small" type="button" data-action="copy-transcript">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h8"/></svg>
+          Copy transcript
+        </button>
+      </div>
     </div>
   </div>
   {% endif %}

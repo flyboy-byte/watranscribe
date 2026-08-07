@@ -73,6 +73,14 @@ a { color: inherit; }
   transition: color .15s, background .15s; flex-shrink: 0;
 }
 .wa-theme-btn:hover { color: var(--text); background: var(--surface2); }
+.wa-header-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.wa-icon-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); padding: 6px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color .15s, background .15s; flex-shrink: 0; text-decoration: none;
+}
+.wa-icon-btn:hover { color: var(--text); background: var(--surface2); }
 
 /* ── Privacy banner ── */
 .wa-privacy {
@@ -157,6 +165,7 @@ a { color: inherit; }
 .wa-act.primary:hover { background: var(--grn-dk); border-color: var(--grn-dk); }
 
 /* ── Clip strip (multi-file) ── */
+.wa-clipstrip-lbl { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 .wa-clipstrip { display: flex; gap: 7px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 3px; -webkit-overflow-scrolling: touch; }
 .wa-clipstrip::-webkit-scrollbar { display: none; }
 .wa-clip {
@@ -277,7 +286,23 @@ hr.wa-sep { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 .wd { padding: 1px 3px; border-radius: 5px; cursor: pointer; transition: background .12s; }
 .wd:hover { background: rgba(37,211,102,.18); }
 .wd.active { background: var(--grn); color: var(--on-grn); }
-.wa-sheet-foot { padding: 10px 14px 14px; font-size: 12px; color: var(--muted); text-align: center; border-top: 1px solid var(--border); }
+.wa-sheet-foot {
+  padding: 10px 14px 14px; font-size: 12px; color: var(--muted);
+  border-top: 1px solid var(--border); display: flex; align-items: center;
+  justify-content: space-between; gap: 8px; flex-wrap: wrap;
+}
+.wa-act.small { flex: 0 0 auto; padding: 6px 11px; font-size: 12px; }
+
+/* ── Selection scoping ──
+   Mobile "select all" has no real DOM boundary to respect on non-form
+   text, so it can jump past the intended paragraph into surrounding UI
+   chrome. Buttons/icons/labels aren't meant to be selected anyway, so
+   excluding them keeps a stray select-all mostly contained to actual
+   transcript/summary content instead of grabbing button labels too. */
+button, .wa-btn, .wa-act, .wa-clip, .wa-theme-btn, .wa-icon-btn,
+.wa-handle, .wa-levelbar label, .wa-htitle, .wa-hsub, svg {
+  -webkit-user-select: none; user-select: none;
+}
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }

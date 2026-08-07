@@ -137,6 +137,7 @@ def index():
             audio_b64=audio_b64,
             words=words,
             summary_text=summary_text,
+            transcript_text=session["transcriptions"][selected_idx],
         )
 
     return render_template(
@@ -154,7 +155,7 @@ def index():
     )
 
 
-def _build_player_context(unique_id, file_name, audio_b64, words, summary_text):
+def _build_player_context(unique_id, file_name, audio_b64, words, summary_text, transcript_text=""):
     mime_types = {
         "mp3": "audio/mpeg", "wav": "audio/wav", "ogg": "audio/ogg",
         "opus": "audio/ogg", "m4a": "audio/mp4", "oga": "audio/ogg",
@@ -182,6 +183,7 @@ def _build_player_context(unique_id, file_name, audio_b64, words, summary_text):
         "mime": mime,
         "words": clean_words,
         "full": summary_text,
+        "transcript": str(transcript_text or ""),
         "tldr": tldr,
         "points": points,
         "has_summary": bool(tldr),

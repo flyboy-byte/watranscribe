@@ -20,16 +20,25 @@
       <div class="wa-htitle">WAtranscribe</div>
       <div class="wa-hsub">Transcribe &middot; Summarize</div>
     </div>
-    <button class="wa-theme-btn" id="wa-theme-toggle" title="Switch theme" type="button">
-      <span id="wa-theme-icon">{{ '☀' if theme == 'light' else '☾' }}</span>
-    </button>
+    <div class="wa-header-actions">
+      <button class="wa-icon-btn" id="wa-install-btn" type="button" title="Install app" style="display:none;">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M8 7l4-4 4 4"/><path d="M5 12v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>
+      </button>
+      <a class="wa-icon-btn" href="https://github.com/flyboy-byte/watranscribe/releases" target="_blank" rel="noopener" title="Android app (APK)">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+      </a>
+      <button class="wa-theme-btn" id="wa-theme-toggle" title="Switch theme" type="button">
+        <span id="wa-theme-icon">{{ '☀' if theme == 'light' else '☾' }}</span>
+      </button>
+    </div>
   </div>
 
   <p class="wa-privacy">
     <span class="wa-privacy-ic">&#128274;</span>
-    We don't keep your data. Audio and transcripts exist only for this
-    browser session and are never saved to a database — closing the tab or
-    hitting <strong>Clear</strong> erases them immediately.
+    We don't keep your data. Audio and transcripts are held only in a
+    temporary session on the server — never written to a database — and
+    <strong>auto-expire within 6 hours</strong>. Hit <strong>Clear</strong>
+    to erase them immediately instead of waiting.
   </p>
 
   {% with messages = get_flashed_messages() %}

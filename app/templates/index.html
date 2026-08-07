@@ -31,6 +31,7 @@
 {% else %}
 
 {% if n > 1 %}
+<div class="wa-clipstrip-lbl">{{ n }} notes in this session — not saved anywhere else</div>
 <div class="wa-clipstrip">
   {% for fname in file_names %}
   <a class="wa-clip {{ 'on' if loop.index0 == selected_idx else '' }}" href="{{ url_for('transcribe.index', file=loop.index0) }}">{{ fname[:18] }}</a>
@@ -69,10 +70,28 @@
   <summary>View / edit transcript</summary>
   <form method="POST" action="{{ url_for('transcribe.update_transcript', idx=selected_idx) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <textarea class="wa-textarea" name="text">{{ transcript }}</textarea>
-    <button class="wa-btn" type="submit" style="margin-top:8px;">Save</button>
+    <textarea class="wa-textarea" id="wa-transcript-edit" name="text">{{ transcript }}</textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="wa-btn" type="submit">Save</button>
+      <button class="wa-btn" type="button" id="wa-copy-edit-transcript">Copy</button>
+    </div>
   </form>
 </details>
+<script>
+  (function () {
+    var btn = document.getElementById("wa-copy-edit-transcript");
+    var ta = document.getElementById("wa-transcript-edit");
+    if (!btn || !ta) return;
+    btn.addEventListener("click", function () {
+      if (!navigator.clipboard) return;
+      var orig = btn.textContent;
+      navigator.clipboard.writeText(ta.value).then(function () {
+        btn.textContent = "Copied!";
+        setTimeout(function () { btn.textContent = orig; }, 1200);
+      });
+    });
+  })();
+</script>
 
 {% if has_api_key and n > 1 %}
 <hr class="wa-sep">
