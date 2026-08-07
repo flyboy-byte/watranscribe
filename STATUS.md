@@ -55,73 +55,62 @@ install time.
    instead of falling back to a Custom Tab with an address bar. Deployed
    and confirmed live: `curl https://transcribe.flyboybyte.com/.well-known/assetlinks.json`.
 
-## Known cosmetic issue, not fixed
+## Install failure — root cause found and fixed (2026-08-07)
 
-Bubblewrap translates every entry in the source manifest's
-`share_target.params.files[0].accept` array (which mixes MIME types and
-file extensions, e.g. `"audio/*", ".opus", ".m4a"`) into native Android
-`<data android:mimeType="...">` entries verbatim — so `.opus`, `.m4a`, etc.
-end up as literal (invalid) `mimeType` values that never match anything.
-Harmless: the `audio/*` wildcard entry is valid and does the real work,
-since WhatsApp/Signal always set a real audio MIME type on shared files.
-Not worth stripping extensions from the source `manifest.json` just for
-this, since they're still useful for the browser-side PWA share target
-(non-TWA users) as a fallback when a sharer's MIME type is generic.
+Every install attempt (v1.0.0 chat transfer, v1.0.0 GitHub Release
+download, v1.0.1 rebuild) failed with a generic-looking parse error. Two
+wrong theories were chased first (chat-transfer corruption — ruled out by
+a byte-identical download comparison; targeting a too-new/alpha SDK —
+ruled out once Logan confirmed his phone runs Android 17). The real cause,
+found via `pm install` on-device through Termux/adb, which surfaces the
+actual Android error instead of the generic Play-Store-style dialog:
 
-## Current blocker
+```
+Failure [INSTALL_PARSE_FAILED_MANIFEST_MALFORMED:
+android.content.IntentFilter$MalformedMimeTypeException: .opus]
+```
 
-APK built, signature-verified locally (`apksigner verify`, zip integrity
-checked with `unzip -t`, no native libs so no ABI concerns, SHA-256 of the
-built file: `387fca79b4ea4dc7f647672e6d8e4b8bafc62a32eeaf723749aa141e4abf341b`).
-Sent to Logan's phone via chat file transfer; install failed with Android's
-generic "problem parsing the package" error, which — combined with a clean
-local verification — points to the chat transfer corrupting/truncating the
-file, not a build defect.
+The source site manifest's `share_target.params.files[0].accept` list
+mixed real MIME types with bare file extensions (`"audio/*", ".opus",
+".m4a", ".mp3", ...`). Bubblewrap translates every entry verbatim into
+`AndroidManifest.xml` `<data android:mimeType="...">`. A bare extension
+isn't a valid `type/subtype` MIME string, and Android's manifest parser
+throws on the **first** invalid one it hits — which fails the entire
+package parse, not just that one intent-filter entry. This is why it
+failed identically regardless of signing, SDK level, or transfer method:
+none of those were ever the problem.
 
-**2026-08-07**: project moved to `/home/logan/projects/trans/watranscribe-twa/`
-(nested inside `trans/` alongside `watranscribe-bot/`, same "own git repo
-nested on disk" pattern — see `trans/.gitignore`), pushed to its own GitHub
-repo (`https://github.com/flyboy-byte/watranscribe-twa`, private), and the
-built APK attached as a GitHub Release for direct phone download.
+**Fix**: `trans/app/static/manifest.json`'s `accept` list now only
+contains real MIME types (`audio/*`, `audio/opus`, `audio/mp4`,
+`audio/mpeg`, `audio/wav`, `audio/ogg`) — deployed live. Regenerated this
+project with `node gen.js` (which re-reads the live manifest and rebuilds
+`AndroidManifest.xml` with corrected `<data>` entries), rebuilt, and
+reverted the earlier compileSdk-35/androidx.browser-1.8.0 pin from v1.0.1
+back to bubblewrap's plain defaults (compileSdk/targetSdk 36) since that
+was never the real bug.
 
-**v1.0.0 also failed to install** (confirmed not a transfer issue — the
-downloaded file was byte-identical to the local build). Root cause: the
-bubblewrap template's default `compileSdkVersion`/`targetSdkVersion` 36
-(Android 16), pulled in transitively via `androidx.browser:browser:
-1.9.0-alpha04` (an **alpha** release) through `androidbrowserhelper`.
-Targeting an alpha dependency and a very new API level is the most likely
-cause of "problem parsing the package" — aapt2/AGP output tied to a
-non-stable API level can produce a manifest/resource binary format the
-device's PackageParser doesn't handle correctly.
+Verified on the new APK: `aapt2 dump xmltree` shows all six `mimeType`
+values are now valid `type/subtype` strings; `apksigner verify --verbose`
+shows v1/v2/v3 all pass.
 
-**Fix (v1.0.1)**: `app/build.gradle` now pins `compileSdkVersion`/
-`targetSdkVersion` to **35** (stable, Android 15) and forces
-`androidx.browser` to the last stable release (**1.8.0**) via a
-`resolutionStrategy.force` block — added *after* the `dependencies` block
-that bubblewrap's template generates, since `node gen.js` regenerates
-`app/build.gradle` from that template every time and will wipe this
-override if `gen.js` is rerun. **Reapply the `configurations.all {
-resolutionStrategy { force 'androidx.browser:browser:1.8.0' } }` block and
-the `compileSdkVersion 35` / `targetSdkVersion 35` edits after any future
-`node gen.js` regeneration**, before rebuilding.
-Released: https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.1
+Released: https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.2
+(v1.0.0 and v1.0.1 left up for history but are known-broken — use v1.0.2.)
 
 ## To resume
 
-1. On the phone, open
-   https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.1 and
-   download `app-release-signed.apk` directly (v1.0.0 is left up for
-   history but is known-broken — use v1.0.1).
-2. Install it, open the app once, confirm it launches full-screen (no
-   address bar) — this is the actual asset-links verification working.
-3. Test: share a real voice note to it from WhatsApp or Signal.
-4. If the intent-filter still doesn't show up in the OS share sheet after
-   a clean install, that's a genuine new bug worth investigating (unlike
-   the previous WebAPK-minting dead end, which was environmental, not
-   fixable from this side).
-5. Fallback if the Release download also fails: `adb install -r
-   app-release-signed.apk` with the phone connected via USB/wireless
-   debugging (`adb devices -l` to confirm connection first).
+1. On the phone, download `app-release-signed.apk` from
+   https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.2 and
+   install it.
+2. Open the app once, confirm it launches full-screen (no address bar) —
+   this is the asset-links verification working.
+3. Test: share a real voice note to it from WhatsApp or Signal — this is
+   the actual feature the fixed `<data android:mimeType>` entries enable.
+4. If install fails again, get the *real* error via `pm install` (not the
+   generic on-device dialog) — either `adb install` with the phone
+   connected via USB/wireless debugging, or on-device via Termux:
+   `cp <apk> /data/local/tmp/app.apk && pm install /data/local/tmp/app.apk`
+   (installing straight from `/sdcard` hits an unrelated SELinux/FUSE
+   denial — copy to `/data/local/tmp` first).
 
 ## Rebuilding after a source change
 
