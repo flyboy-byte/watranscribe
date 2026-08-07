@@ -94,6 +94,31 @@
     if (waveEl) buildWaveform(waveEl, hashStr(root.dataset.playerId || "wa"));
     if (wordsContainer && data.words) renderWords(wordsContainer, data.words);
 
+    // Chromium has a long-standing quirk where Ogg/Opus audio loaded from a
+    // data: URI often can't compute a duration (stuck at 0:00, no seeking)
+    // because a data: URI isn't a real seekable resource the demuxer can
+    // probe. Converting it to a Blob URL client-side gives it a real,
+    // fully-buffered, seekable resource instead, which fixes duration/seek
+    // reliably. Swap the <source>'s data: URI for a blob: URL before any
+    // playback is attempted.
+    if (audio) {
+      const sourceEl = audio.querySelector("source");
+      if (sourceEl && sourceEl.src.indexOf("data:") === 0) {
+        try {
+          const commaIdx = sourceEl.src.indexOf(",");
+          const mime = sourceEl.src.slice(5, commaIdx).split(";")[0];
+          const binary = atob(sourceEl.src.slice(commaIdx + 1));
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          const blobUrl = URL.createObjectURL(new Blob([bytes], { type: mime }));
+          audio.src = blobUrl;
+          audio.load();
+        } catch (e) {
+          console.error("[player] failed to build blob URL from data URI, falling back to data: URI", e);
+        }
+      }
+    }
+
     function updateBars() {
       if (!audio || !waveEl) return;
       const frac = audio.duration ? audio.currentTime / audio.duration : 0;
@@ -116,7 +141,15 @@
       4: "MEDIA_ERR_SRC_NOT_SUPPORTED",
     };
 
-    function showError(msg) {
+    function showError(msg, err) {
+      // A play() request aborted by a same-tick pause() (rapid double-tap,
+      // or our own currentTime-reset-then-play sequence racing a prior
+      // pending play()) is expected browser behavior, not a real failure —
+      // don't scare the user with it, just log for debugging.
+      if (err && err.name === "AbortError") {
+        console.warn("[player] benign play/pause race:", msg);
+        return;
+      }
       console.error("[player]", msg);
       if (errEl) {
         errEl.textContent = msg;
@@ -155,7 +188,7 @@
           audio.play().then(function () {
             if (errEl) errEl.style.display = "none";
           }).catch(function (err) {
-            showError("Playback blocked: " + err.message);
+            showError("Playback blocked: " + err.message, err);
           });
           setPlayingIcon(true);
         } else {
@@ -183,7 +216,7 @@
           audio.play().then(function () {
             if (errEl) errEl.style.display = "none";
           }).catch(function (err) {
-            showError("Playback blocked: " + err.message);
+            showError("Playback blocked: " + err.message, err);
           });
           setPlayingIcon(true);
         };
