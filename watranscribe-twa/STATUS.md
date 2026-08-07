@@ -93,7 +93,7 @@ Verified on the new APK: `aapt2 dump xmltree` shows all six `mimeType`
 values are now valid `type/subtype` strings; `apksigner verify --verbose`
 shows v1/v2/v3 all pass.
 
-Released: https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.2
+Released: https://github.com/flyboy-byte/watranscribe/releases/tag/twa-v1.0.2
 (v1.0.0 and v1.0.1 left up for history but are known-broken — use v1.0.2.)
 
 **Confirmed working end-to-end 2026-08-07**: installed clean, opens
@@ -102,7 +102,7 @@ full-screen, and sharing a voice note from WhatsApp to the app works.
 ## To resume
 
 1. On the phone, download `app-release-signed.apk` from
-   https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.2 and
+   https://github.com/flyboy-byte/watranscribe/releases/tag/twa-v1.0.2 and
    install it.
 2. Open the app once, confirm it launches full-screen (no address bar) —
    this is the asset-links verification working.

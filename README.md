@@ -65,3 +65,33 @@ See `.env.example` for the full list and generation commands. Notably:
 ## Deployment
 
 See `PLAN.md` and `deploy/DEPLOY.md` (bare systemd + gunicorn + nginx + certbot, no Docker).
+
+## Related subprojects in this repo
+
+Two related-but-independent projects live as subdirectories here. They're
+not part of the Flask app above and have their own dependencies/build
+tooling — see each one's own docs before working in it.
+
+### `watranscribe-twa/` — Android app
+
+A native Android [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity)
+wrapping this site, built with Google's `bubblewrap` CLI. It exists because
+installing the PWA through Chrome doesn't reliably register as a WhatsApp
+share target on every device/OS combination (e.g. GrapheneOS blocks the
+WebAPK-minting round-trip Chrome needs) — a locally-built, signed APK with
+the share intent-filter compiled directly into the manifest sidesteps that.
+
+See `watranscribe-twa/STATUS.md` for build steps, signing setup, and
+known issues. Signed APKs are published under this repo's
+[Releases](https://github.com/flyboy-byte/watranscribe/releases).
+
+### `watranscribe-bot/` — WhatsApp bot (parked)
+
+An early-stage spike exploring a WhatsApp Business Cloud API bot that
+transcribes voice notes sent directly to it, as an alternative/complement
+to the PWA share flow. **Currently parked** — scaffolded and unit-tested
+with mocked external calls only, never deployed or exercised against real
+Meta/Deepgram traffic.
+
+See `watranscribe-bot/PROJECT_STATE.md`, `DECISIONS.md`, and
+`RESUME_CHECKLIST.md` before resuming work here.
