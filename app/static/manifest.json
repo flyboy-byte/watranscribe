@@ -32,12 +32,11 @@
           "name": "audio",
           "accept": [
             "audio/*",
-            ".opus",
-            ".m4a",
-            ".mp3",
-            ".wav",
-            ".ogg",
-            ".oga"
+            "audio/opus",
+            "audio/mp4",
+            "audio/mpeg",
+            "audio/wav",
+            "audio/ogg"
           ]
         }
       ]
