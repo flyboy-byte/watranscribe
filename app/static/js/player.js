@@ -106,7 +106,11 @@
       if (sourceEl && sourceEl.src.indexOf("data:") === 0) {
         try {
           const commaIdx = sourceEl.src.indexOf(",");
-          const mime = sourceEl.src.slice(5, commaIdx).split(";")[0];
+          // Everything between "data:" and "," is the mediatype, which may
+          // itself contain params (e.g. "audio/ogg;codecs=opus") before the
+          // trailing ";base64" flag — strip only that flag, not every ";".
+          let mime = sourceEl.src.slice(5, commaIdx);
+          if (mime.endsWith(";base64")) mime = mime.slice(0, -7);
           const binary = atob(sourceEl.src.slice(commaIdx + 1));
           const bytes = new Uint8Array(binary.length);
           for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
