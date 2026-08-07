@@ -51,12 +51,12 @@ def twaManifest = [
 ]
 
 android {
-    compileSdkVersion 36
+    compileSdkVersion 35
     namespace "com.flyboybyte.watranscribe"
     defaultConfig {
         applicationId "com.flyboybyte.watranscribe"
         minSdkVersion 21
-        targetSdkVersion 36
+        targetSdkVersion 35
         versionCode 1
         versionName "1"
 
@@ -208,9 +208,15 @@ repositories {
     
 }
 
+configurations.all {
+    resolutionStrategy {
+        force 'androidx.browser:browser:1.8.0'
+    }
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    
+
         implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
-    
+
 }
