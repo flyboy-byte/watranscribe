@@ -1,0 +1,67 @@
+{
+  "packageId": "com.flyboybyte.watranscribe",
+  "host": "transcribe.flyboybyte.com",
+  "name": "WAtranscribe",
+  "launcherName": "WAtranscribe",
+  "display": "standalone",
+  "themeColor": "#075E54",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#075E54",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://transcribe.flyboybyte.com/static/icons/icon-512.png",
+  "maskableIconUrl": "https://transcribe.flyboybyte.com/static/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "/home/logan/@flyboybyte__drag-tree.jks",
+    "alias": "e2f4affc23a7141f202d26f6d9f2d4d0"
+  },
+  "appVersionName": "1",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "unknown",
+  "webManifestUrl": "https://transcribe.flyboybyte.com/static/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://transcribe.flyboybyte.com/",
+  "minSdkVersion": 21,
+  "shareTarget": {
+    "action": "https://transcribe.flyboybyte.com/static/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "audio",
+          "accept": [
+            "audio/*",
+            "audio/opus",
+            "audio/mp4",
+            "audio/mpeg",
+            "audio/wav",
+            "audio/ogg"
+          ]
+        }
+      ]
+    }
+  },
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1"
+}
