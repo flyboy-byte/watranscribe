@@ -82,18 +82,36 @@ file, not a build defect.
 (nested inside `trans/` alongside `watranscribe-bot/`, same "own git repo
 nested on disk" pattern — see `trans/.gitignore`), pushed to its own GitHub
 repo (`https://github.com/flyboy-byte/watranscribe-twa`, private), and the
-built APK attached to a GitHub Release
-(https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.0) so it
-can be downloaded directly on the phone via browser — sidesteps the chat
-transfer corruption entirely, no `adb` needed. Still worth keeping `adb
-install` as a fallback if the Release download somehow also fails.
+built APK attached as a GitHub Release for direct phone download.
+
+**v1.0.0 also failed to install** (confirmed not a transfer issue — the
+downloaded file was byte-identical to the local build). Root cause: the
+bubblewrap template's default `compileSdkVersion`/`targetSdkVersion` 36
+(Android 16), pulled in transitively via `androidx.browser:browser:
+1.9.0-alpha04` (an **alpha** release) through `androidbrowserhelper`.
+Targeting an alpha dependency and a very new API level is the most likely
+cause of "problem parsing the package" — aapt2/AGP output tied to a
+non-stable API level can produce a manifest/resource binary format the
+device's PackageParser doesn't handle correctly.
+
+**Fix (v1.0.1)**: `app/build.gradle` now pins `compileSdkVersion`/
+`targetSdkVersion` to **35** (stable, Android 15) and forces
+`androidx.browser` to the last stable release (**1.8.0**) via a
+`resolutionStrategy.force` block — added *after* the `dependencies` block
+that bubblewrap's template generates, since `node gen.js` regenerates
+`app/build.gradle` from that template every time and will wipe this
+override if `gen.js` is rerun. **Reapply the `configurations.all {
+resolutionStrategy { force 'androidx.browser:browser:1.8.0' } }` block and
+the `compileSdkVersion 35` / `targetSdkVersion 35` edits after any future
+`node gen.js` regeneration**, before rebuilding.
+Released: https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.1
 
 ## To resume
 
 1. On the phone, open
-   https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.0 and
-   download `app-release-signed.apk` directly (avoids the chat-transfer
-   corruption issue from the first attempt).
+   https://github.com/flyboy-byte/watranscribe-twa/releases/tag/v1.0.1 and
+   download `app-release-signed.apk` directly (v1.0.0 is left up for
+   history but is known-broken — use v1.0.1).
 2. Install it, open the app once, confirm it launches full-screen (no
    address bar) — this is the actual asset-links verification working.
 3. Test: share a real voice note to it from WhatsApp or Signal.
