@@ -40,11 +40,9 @@ Stored at: `/home/logan/projects/trans/watranscribe-bot/.env` (gitignored, confi
 `git check-ignore -v .env`). Never committed to git — verified: repo had zero commits until
 this parking checkpoint, and `.env` was never staged.
 
-Rotation date: **unconfirmed.** A WhatsApp access token was pasted in plaintext in chat during
-an earlier session (2026-08-06 conversation) and must be treated as compromised regardless of
-whether it has since expired. **Action needed from Logan before/at resume: confirm in Meta's
-dashboard whether that token was ever rotated, and rotate it now if not**, before doing anything
-else with this project. Do not reuse it.
+Rotation date: 2026-08-06. A WhatsApp access token was pasted in plaintext in chat earlier the
+same day; Logan confirmed it was rotated in Meta's dashboard before parking. No action needed
+on resume.
 
 ## Known issues
 - Token exposure above — needs explicit confirmation/rotation.

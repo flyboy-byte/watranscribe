@@ -7,10 +7,8 @@ already settled. This project was deliberately parked on 2026-08-06, not abandon
 2. Confirm no credentials leaked while parked: check this repo's git log (`git log --stat`,
    should show only the parking checkpoint commit and scaffold — no `.env`), and check that
    `.env` still exists and is still gitignored (`git check-ignore -v .env`).
-3. **Rotate the Meta access token** if that wasn't already confirmed done before parking (see
-   `PROJECT_STATE.md`'s Secrets section — a token was pasted in plaintext chat once and must be
-   treated as compromised regardless of elapsed time). Generate a fresh one in Meta's App
-   Dashboard → WhatsApp → API Setup, put it directly in `.env` yourself (never paste it in chat).
+3. Token rotation: already done (confirmed 2026-08-06, see `PROJECT_STATE.md`). If the `.env`
+   token is old enough to be stale by resume time, rotate again as routine hygiene — not urgent.
 4. Check current Meta WhatsApp Cloud API documentation and pin a Graph API version in
    `app/config.py` (not pinned yet — do not assume the version from whenever this was parked is
    still current).
