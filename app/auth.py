@@ -41,7 +41,10 @@ LOCKOUT_SECS = 300
 auth_bp = Blueprint("auth", __name__)
 
 # Paths that must always be reachable without the password gate.
-_EXEMPT_ENDPOINTS = {"auth.login", "static"}
+# transcribe.assetlinks: Digital Asset Links file for the TWA (Android app) —
+# Android/Chrome fetch it unauthenticated to verify the app is allowed to
+# open this domain without a browser address bar. Not sensitive content.
+_EXEMPT_ENDPOINTS = {"auth.login", "static", "transcribe.assetlinks"}
 
 
 def _auth_token(password_hash: str) -> str:

@@ -15,6 +15,7 @@ from flask import (
     Blueprint,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -28,6 +29,32 @@ from app.services.deepgram_client import transcribe_audio_with_deepgram
 transcribe_bp = Blueprint("transcribe", __name__)
 
 LEVEL_LABELS = {1: "Quick", 2: "Brief", 3: "Balanced", 4: "Detailed", 5: "Full"}
+
+# SHA-256 signing cert fingerprint of the WAtranscribe TWA Android package
+# (com.flyboybyte.watranscribe), signed with the same keystore as other
+# flyboybyte.com Android apps. Proves to Android that this specific APK is
+# allowed to open transcribe.flyboybyte.com without a browser address bar
+# (Digital Asset Links) — must be updated if the app is ever re-signed with
+# a different key.
+_TWA_PACKAGE_ID = "com.flyboybyte.watranscribe"
+_TWA_SHA256_FINGERPRINT = (
+    "FF:73:9C:F5:65:D8:FE:3A:F4:FF:97:E6:41:F6:33:6F:"
+    "A6:9E:BC:F3:EE:C2:22:A7:A7:C5:AB:9F:8E:3D:83:7A"
+)
+
+
+@transcribe_bp.route("/.well-known/assetlinks.json", methods=["GET"])
+def assetlinks():
+    return jsonify([
+        {
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": _TWA_PACKAGE_ID,
+                "sha256_cert_fingerprints": [_TWA_SHA256_FINGERPRINT],
+            },
+        }
+    ])
 
 # Markdown decoration Claude sometimes wraps summary lines in (bold
 # sub-headers like "**Key Points:**", "# " headings, bullet markers). Bold
