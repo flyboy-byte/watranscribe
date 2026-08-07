@@ -371,3 +371,39 @@ HTTP→HTTPS 301, security headers present, `/static/manifest.json` and
 - **Still not verified** (needs a real browser, not just curl/test client):
   the in-browser waveform/word-click player, the PWA share-target flow on an
   actual phone, and the theme toggle's client-side cookie + reload behavior.
+
+### PWA share-target flow — now investigated (2026-08-07)
+
+The share-target flow (`app/static/sw.js`, `app/static/js/share-target.js`,
+`app/static/manifest.json`'s `share_target`) already existed and was
+correct, but was **completely undiscoverable** — the "Share from WhatsApp"
+card in `index.html` was dead (`onclick="return false;"`), and nothing
+explained that the PWA must be *installed* (not just visited) before
+Android's share sheet will offer it. Fixed: `app/static/js/install.js`
+drives a real `beforeinstallprompt` install flow, with iOS manual
+instructions as a fallback. Deployed and live.
+
+Deeper problem found on GrapheneOS specifically: Chrome/Brave's "Install
+app" only creates a real OS-level share target if it successfully mints a
+**WebAPK** via a round-trip to Google's server — GrapheneOS blocks that by
+design, so install *looks* successful (standalone display, correct icon)
+but never actually registers with Android's share sheet. Confirmed via
+`chrome://webapks` showing an empty list. Not fixable from the site's code
+— it's a Google-infrastructure dependency inherent to Chrome's install
+mechanism, not a bug here.
+
+Workaround: a real Android app, `com.flyboybyte.watranscribe`, built as a
+Trusted Web Activity (TWA) with the share intent-filter compiled directly
+into its manifest — no Google server dependency. Lives in its own repo,
+`~/projects/watranscribe-twa/` (own git repo, same isolation pattern as
+`watranscribe-bot/`) — see that repo's `STATUS.md` for full build details,
+signing key info, and current status. `trans/app/routes/transcribe.py` now
+serves `/.well-known/assetlinks.json` (deployed, live) so the TWA can open
+full-screen once installed.
+
+**Status: blocked on getting a clean copy of the built APK onto the test
+phone** — chat file transfer produced a corrupted copy (Android's "problem
+parsing the package"); the APK itself verified clean locally
+(`apksigner verify`, zip integrity, no ABI issues). Next step is `adb
+install` once the phone is connected — see `watranscribe-twa/STATUS.md`
+for the exact resume steps.
