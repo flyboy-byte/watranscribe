@@ -156,15 +156,9 @@ def index():
 
 
 def _build_player_context(unique_id, file_name, audio_b64, words, summary_text, transcript_text=""):
-    # WhatsApp/Signal voice notes are Ogg-Opus (.opus/.oga). Chromium needs the
-    # codecs param spelled out for a blob: URL (no filename to sniff off of,
-    # unlike a data: URI) — a bare "audio/ogg" decodes inconsistently and can
-    # fail outright with MEDIA_ERR_SRC_NOT_SUPPORTED. Plain ".ogg" is left
-    # generic since that container isn't necessarily Opus-encoded.
     mime_types = {
         "mp3": "audio/mpeg", "wav": "audio/wav", "ogg": "audio/ogg",
-        "opus": "audio/ogg;codecs=opus", "m4a": "audio/mp4",
-        "oga": "audio/ogg;codecs=opus",
+        "opus": "audio/ogg", "m4a": "audio/mp4", "oga": "audio/ogg",
     }
     ext = Path(file_name).suffix.lstrip(".").lower() or "opus"
     mime = mime_types.get(ext, "audio/ogg")

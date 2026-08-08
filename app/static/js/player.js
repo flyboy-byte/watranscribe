@@ -99,27 +99,26 @@
     // because a data: URI isn't a real seekable resource the demuxer can
     // probe. Converting it to a Blob URL client-side gives it a real,
     // fully-buffered, seekable resource instead, which fixes duration/seek
-    // reliably. Swap the <source>'s data: URI for a blob: URL before any
-    // playback is attempted.
+    // reliably. Use fetch() to do the data-URI-to-Blob decode rather than a
+    // hand-rolled atob() loop — it's the browser's own well-tested decoder,
+    // one less place for a subtle bug to hide.
+    let lastBlobInfo = null;
     if (audio) {
       const sourceEl = audio.querySelector("source");
-      if (sourceEl && sourceEl.src.indexOf("data:") === 0) {
-        try {
-          const commaIdx = sourceEl.src.indexOf(",");
-          // Everything between "data:" and "," is the mediatype, which may
-          // itself contain params (e.g. "audio/ogg;codecs=opus") before the
-          // trailing ";base64" flag — strip only that flag, not every ";".
-          let mime = sourceEl.src.slice(5, commaIdx);
-          if (mime.endsWith(";base64")) mime = mime.slice(0, -7);
-          const binary = atob(sourceEl.src.slice(commaIdx + 1));
-          const bytes = new Uint8Array(binary.length);
-          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-          const blobUrl = URL.createObjectURL(new Blob([bytes], { type: mime }));
-          audio.src = blobUrl;
-          audio.load();
-        } catch (e) {
-          console.error("[player] failed to build blob URL from data URI, falling back to data: URI", e);
-        }
+      const dataUri = sourceEl && sourceEl.src;
+      if (dataUri && dataUri.indexOf("data:") === 0) {
+        fetch(dataUri)
+          .then(function (r) { return r.blob(); })
+          .then(function (blob) {
+            lastBlobInfo = { type: blob.type, size: blob.size, canPlayType: audio.canPlayType(blob.type) };
+            console.log("[player] blob ready", lastBlobInfo);
+            audio.src = URL.createObjectURL(blob);
+            audio.load();
+          })
+          .catch(function (e) {
+            lastBlobInfo = { fetchError: e.message };
+            console.error("[player] failed to build blob URL from data URI, leaving data: URI in place", e);
+          });
       }
     }
 
@@ -166,7 +165,13 @@
       audio.addEventListener("error", function () {
         const err = audio.error;
         const name = err ? MEDIA_ERROR_NAMES[err.code] || ("code " + err.code) : "unknown";
-        showError("Audio failed to load (" + name + "). Try re-uploading the file.");
+        const srcKind = audio.src.indexOf("blob:") === 0 ? "blob" : audio.src.indexOf("data:") === 0 ? "data-uri" : "other";
+        const blobInfo = lastBlobInfo
+          ? " [" + JSON.stringify(lastBlobInfo) + "]"
+          : "";
+        showError(
+          "Audio failed to load (" + name + ", src=" + srcKind + ")" + blobInfo + ". Try re-uploading the file."
+        );
       });
       audio.addEventListener("timeupdate", function () {
         if (curEl) curEl.textContent = fmtTime(audio.currentTime);
