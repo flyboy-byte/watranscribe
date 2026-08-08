@@ -12,10 +12,8 @@
       } | tojson | safe }}
   </script>
 
-  {% if player.audio_b64 %}
-  <audio class="wa-real-audio" style="display:none" preload="metadata">
-    <source src="data:{{ player.mime }};base64,{{ player.audio_b64 }}" type="{{ player.mime }}">
-  </audio>
+  {% if player.audio_url %}
+  <audio class="wa-real-audio" style="display:none" preload="metadata" src="{{ player.audio_url }}"></audio>
   <div class="wa-audio">
     <button class="wa-play" type="button" data-action="toggle-play">
       <svg class="wa-ico-play" viewBox="0 0 24 24" width="15" height="15"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>
@@ -25,7 +23,6 @@
     <span class="wa-time"><span class="wa-cur">0:00</span><span class="wa-dur"> / <span class="wa-tot">0:00</span></span></span>
   </div>
   <div class="wa-player-err" style="display:none"></div>
-  <div class="wa-player-dbg">audio: initializing…</div>
   {% endif %}
 
   {% if player.has_summary %}

@@ -7,18 +7,21 @@ selected_file_index, condensation_level. Theme stays a plain client cookie
 (set directly by static/js/theme.js), never touches the server session.
 """
 import base64
+import io
 import os
 import tempfile
 from pathlib import Path
 
 from flask import (
     Blueprint,
+    abort,
     current_app,
     flash,
     jsonify,
     redirect,
     render_template,
     request,
+    send_file,
     session,
     url_for,
 )
@@ -125,16 +128,13 @@ def index():
             if selected_idx < len(session["word_timestamps"])
             else []
         )
-        audio_b64 = (
-            session["audio_files"][selected_idx]
-            if selected_idx < len(session["audio_files"])
-            else None
-        )
+        has_audio = selected_idx < len(session["audio_files"]) and bool(session["audio_files"][selected_idx])
         summary_text = str(session["summaries"].get(str(selected_idx), session["summaries"].get(selected_idx, "")))
         player = _build_player_context(
             unique_id=f"t{selected_idx}",
+            idx=selected_idx,
             file_name=file_name,
-            audio_b64=audio_b64,
+            has_audio=has_audio,
             words=words,
             summary_text=summary_text,
             transcript_text=session["transcriptions"][selected_idx],
@@ -155,13 +155,19 @@ def index():
     )
 
 
-def _build_player_context(unique_id, file_name, audio_b64, words, summary_text, transcript_text=""):
-    mime_types = {
-        "mp3": "audio/mpeg", "wav": "audio/wav", "ogg": "audio/ogg",
-        "opus": "audio/ogg", "m4a": "audio/mp4", "oga": "audio/ogg",
-    }
+_MIME_TYPES = {
+    "mp3": "audio/mpeg", "wav": "audio/wav", "ogg": "audio/ogg",
+    "opus": "audio/ogg", "m4a": "audio/mp4", "oga": "audio/ogg",
+}
+
+
+def _mime_for_filename(file_name):
     ext = Path(file_name).suffix.lstrip(".").lower() or "opus"
-    mime = mime_types.get(ext, "audio/ogg")
+    return _MIME_TYPES.get(ext, "audio/ogg")
+
+
+def _build_player_context(unique_id, idx, file_name, has_audio, words, summary_text, transcript_text=""):
+    mime = _mime_for_filename(file_name)
 
     clean_words = [
         {"word": w.get("word", ""), "start": w.get("start", 0), "end": w.get("end", w.get("start", 0) + 0.3)}
@@ -179,7 +185,7 @@ def _build_player_context(unique_id, file_name, audio_b64, words, summary_text, 
     return {
         "id": unique_id,
         "file_name": file_name,
-        "audio_b64": audio_b64,
+        "audio_url": url_for("transcribe.audio_file", idx=idx) if has_audio else None,
         "mime": mime,
         "words": clean_words,
         "full": summary_text,
@@ -189,6 +195,30 @@ def _build_player_context(unique_id, file_name, audio_b64, words, summary_text, 
         "has_summary": bool(tldr),
         "has_words": bool(clean_words),
     }
+
+
+@transcribe_bp.route("/audio/<int:idx>", methods=["GET"])
+def audio_file(idx):
+    # Streamed from a real HTTP endpoint rather than embedded as a base64
+    # data: URI in the page — a multi-MB voice note as base64 in the DOM
+    # forced every client-side workaround (data: URI duration bugs, fetch()
+    # failing outright on large data: URIs on constrained mobile devices) we
+    # tried before landing here. A real resource gets proper streaming,
+    # Range-request seeking (via send_file's conditional=True), and doesn't
+    # need any client-side decoding at all.
+    _ensure_state()
+    audio_files = session["audio_files"]
+    if not (0 <= idx < len(audio_files)) or not audio_files[idx]:
+        abort(404)
+    file_names = session["file_names"]
+    file_name = file_names[idx] if idx < len(file_names) else ""
+    raw = base64.b64decode(audio_files[idx])
+    return send_file(
+        io.BytesIO(raw),
+        mimetype=_mime_for_filename(file_name),
+        conditional=True,
+        max_age=0,
+    )
 
 
 @transcribe_bp.route("/upload", methods=["POST"])

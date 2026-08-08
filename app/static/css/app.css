@@ -278,7 +278,6 @@ hr.wa-sep { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   color: #ef5350; border-radius: var(--radius); padding: 8px 12px;
   font-size: 12px; margin-bottom: 8px;
 }
-.wa-player-dbg { font-size: 10.5px; color: var(--muted); margin: -4px 0 8px; word-break: break-word; }
 .wa-dur { color: var(--muted); font-weight: 500; }
 .wa-sheet-wrap { background: var(--surface); border-radius: 16px 16px 0 0; border-top: 1.5px solid var(--border); box-shadow: var(--shadow); margin-top: 8px; }
 .wa-handle { padding: 10px 14px 8px; cursor: pointer; width: 100%; background: none; border: none; text-align: left; color: inherit; font: inherit; display: block; }

@@ -78,7 +78,6 @@
 
     const audio = root.querySelector(".wa-real-audio");
     const errEl = root.querySelector(".wa-player-err");
-    const dbgEl = root.querySelector(".wa-player-dbg");
     const waveEl = root.querySelector(".wa-wave");
     const playBtn = root.querySelector('[data-action="toggle-play"]');
     const icoPlay = root.querySelector(".wa-ico-play");
@@ -94,50 +93,6 @@
 
     if (waveEl) buildWaveform(waveEl, hashStr(root.dataset.playerId || "wa"));
     if (wordsContainer && data.words) renderWords(wordsContainer, data.words);
-
-    // Chromium has a long-standing quirk where Ogg/Opus audio loaded from a
-    // data: URI often can't compute a duration (stuck at 0:00, no seeking)
-    // because a data: URI isn't a real seekable resource the demuxer can
-    // probe. Converting it to a Blob URL client-side gives it a real,
-    // fully-buffered, seekable resource instead, which fixes duration/seek
-    // reliably. Use fetch() to do the data-URI-to-Blob decode rather than a
-    // hand-rolled atob() loop — it's the browser's own well-tested decoder,
-    // one less place for a subtle bug to hide.
-    let lastBlobInfo = null;
-
-    function setDbg(msg) {
-      if (dbgEl) dbgEl.textContent = "audio: " + msg;
-    }
-
-    if (audio) {
-      const sourceEl = audio.querySelector("source");
-      const dataUri = sourceEl && sourceEl.src;
-      if (dataUri && dataUri.indexOf("data:") === 0) {
-        setDbg("fetching data: URI (" + dataUri.length + " chars)…");
-        fetch(dataUri)
-          .then(function (r) { return r.blob(); })
-          .then(function (blob) {
-            lastBlobInfo = { type: blob.type, size: blob.size, canPlayType: audio.canPlayType(blob.type) };
-            console.log("[player] blob ready", lastBlobInfo);
-            setDbg("blob ready: " + blob.type + ", " + blob.size + "B, canPlayType=" + lastBlobInfo.canPlayType + " — loading…");
-            audio.src = URL.createObjectURL(blob);
-            audio.load();
-          })
-          .catch(function (e) {
-            lastBlobInfo = { fetchError: e.message };
-            console.error("[player] failed to build blob URL from data URI, leaving data: URI in place", e);
-            setDbg("fetch/blob failed: " + e.message + " — using data: URI directly");
-          });
-      } else {
-        setDbg("no data: URI found on <source>");
-      }
-      audio.addEventListener("loadstart", function () { setDbg("loadstart (readyState=" + audio.readyState + ", networkState=" + audio.networkState + ")"); });
-      audio.addEventListener("progress", function () { setDbg("progress (readyState=" + audio.readyState + ", networkState=" + audio.networkState + ")"); });
-      audio.addEventListener("suspend", function () { setDbg("suspend (readyState=" + audio.readyState + ", networkState=" + audio.networkState + ")"); });
-      audio.addEventListener("stalled", function () { setDbg("stalled (readyState=" + audio.readyState + ", networkState=" + audio.networkState + ")"); });
-      audio.addEventListener("canplay", function () { setDbg("canplay, duration=" + audio.duration); });
-      audio.addEventListener("loadedmetadata", function () { setDbg("loadedmetadata, duration=" + audio.duration); });
-    }
 
     function updateBars() {
       if (!audio || !waveEl) return;
@@ -182,13 +137,7 @@
       audio.addEventListener("error", function () {
         const err = audio.error;
         const name = err ? MEDIA_ERROR_NAMES[err.code] || ("code " + err.code) : "unknown";
-        const srcKind = audio.src.indexOf("blob:") === 0 ? "blob" : audio.src.indexOf("data:") === 0 ? "data-uri" : "other";
-        const blobInfo = lastBlobInfo
-          ? " [" + JSON.stringify(lastBlobInfo) + "]"
-          : "";
-        showError(
-          "Audio failed to load (" + name + ", src=" + srcKind + ")" + blobInfo + ". Try re-uploading the file."
-        );
+        showError("Audio failed to load (" + name + "). Try re-uploading the file.");
       });
       audio.addEventListener("timeupdate", function () {
         if (curEl) curEl.textContent = fmtTime(audio.currentTime);
