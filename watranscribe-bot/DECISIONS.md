@@ -92,7 +92,7 @@ production traffic just to add a bot route.
 ## D-012: Project parked, no time pressure to resume
 
 Date: 2026-08-06
-Status: Accepted
+Status: Superseded by D-013
 
 Decision: Pause all work here. Code is scaffolded but untested against real Meta/WhatsApp
 traffic; nothing is deployed. Parking is a successful, deliberate outcome, not a stall.
@@ -100,3 +100,20 @@ traffic; nothing is deployed. Parking is a successful, deliberate outcome, not a
 Reasons: Logan is a college student and automotive technician with limited, uneven available
 time; the project doesn't need to be rushed to a live state before that time exists. See
 `PROJECT_STATE.md` and `RESUME_CHECKLIST.md` for exact resume steps.
+
+## D-013: Project fully shelved, not just parked
+
+Date: 2026-08-08
+Status: Accepted
+
+Decision: Move from "parked, resume when there's time" to "fully shelved, no active plan to
+resume." Code and docs are kept, not deleted.
+
+Reasons: The thing D-012 was waiting on time for — a working WhatsApp-voice-note-to-transcript
+flow — got built and confirmed working a different way in the meantime: the PWA Web Share Target
+plus an Android TWA (`trans/watranscribe-twa/`), neither of which routes anything through Meta as
+a data processor, neither of which needed Meta App Review. That was this bot's core justification,
+and it stopped being unique to this approach. See `trans/DECISIONS.md` D-006/D-009/D-012 for the
+full reasoning across the whole project, not just this file. If resuming later, re-check whether
+that reasoning still holds before restarting — don't just pick up where D-012 left off assuming
+nothing changed.

@@ -5,10 +5,14 @@ A mobile-first web app that transcribes WhatsApp voice messages and generates AI
 Flask app, deployed at **transcribe.flyboybyte.com**.
 
 **Privacy by design: there is no database.** Everything (audio, transcript,
-summary) lives only in server-side session storage for the duration of one
-browsing session (a few hours), then expires — nothing is ever persisted
-long-term. See `app/config.py`'s `PERMANENT_SESSION_LIFETIME` and
-`deploy/DEPLOY.md`'s session-purge cron job.
+summary) lives only in server-side session storage for **30 minutes**,
+then expires — nothing is ever persisted long-term. See `app/config.py`'s
+`PERMANENT_SESSION_LIFETIME` and `deploy/DEPLOY.md`'s session-purge cron
+job.
+
+See `ARCHITECTURE.md` for a system overview (this app + the two
+subprojects below) and `DECISIONS.md` for the reasoning behind specific
+choices.
 
 ## Features
 
@@ -60,7 +64,9 @@ See `.env.example` for the full list and generation commands. Notably:
 | `app/routes/transcribe.py` | Upload/transcribe/summarize/clear — the only blueprint besides auth |
 | `app/templates/`, `app/static/` | Jinja templates, CSS, JS, PWA assets |
 | `deploy/` | systemd unit, nginx config, deployment steps |
-| `PLAN.md` | Migration/implementation plan and status |
+| `PLAN.md` | Chronological migration/implementation/debugging history |
+| `ARCHITECTURE.md` | Current system overview |
+| `DECISIONS.md` | Why things are the way they are, by decision |
 
 ## Deployment
 
@@ -85,13 +91,15 @@ See `watranscribe-twa/STATUS.md` for build steps, signing setup, and
 known issues. Signed APKs are published under this repo's
 [Releases](https://github.com/flyboy-byte/watranscribe/releases).
 
-### `watranscribe-bot/` — WhatsApp bot (parked)
+### `watranscribe-bot/` — WhatsApp bot (fully shelved)
 
 An early-stage spike exploring a WhatsApp Business Cloud API bot that
-transcribes voice notes sent directly to it, as an alternative/complement
-to the PWA share flow. **Currently parked** — scaffolded and unit-tested
-with mocked external calls only, never deployed or exercised against real
-Meta/Deepgram traffic.
+transcribes voice notes sent directly to it, as an alternative to the PWA
+share flow. **Fully shelved, not just paused** — scaffolded and
+unit-tested with mocked external calls only, never deployed or exercised
+against real Meta/Deepgram traffic. The PWA + TWA combination above ended
+up solving the real use case without routing anything through Meta; see
+`DECISIONS.md` D-012 for the full reasoning.
 
 See `watranscribe-bot/PROJECT_STATE.md`, `DECISIONS.md`, and
 `RESUME_CHECKLIST.md` before resuming work here.

@@ -407,3 +407,80 @@ parsing the package"); the APK itself verified clean locally
 (`apksigner verify`, zip integrity, no ABI issues). Next step is `adb
 install` once the phone is connected — see `watranscribe-twa/STATUS.md`
 for the exact resume steps.
+
+*(Superseded by the sections below — the APK transfer issue and the repo
+layout described above are no longer current.)*
+
+### TWA fixed, verified working end-to-end (2026-08-07/08)
+
+The "problem parsing the package" install failure was **not** transfer
+corruption (ruled out with a byte-identical re-download) — real cause was
+a malformed `AndroidManifest.xml`: bubblewrap translated the site's
+`share_target.params.files[0].accept` list (which mixed real MIME types
+with bare file extensions like `.opus`) verbatim into `<data
+android:mimeType="...">` entries. Android's manifest parser throws on the
+first invalid one, failing the *entire* package parse — same error
+regardless of signing, SDK level, or transfer method. Fixed at the source
+(`app/static/manifest.json` now lists only real MIME types) and confirmed
+working: installs clean, opens full-screen, WhatsApp share-to-app works.
+
+**Repo consolidation (2026-08-07)**: `watranscribe-twa/` and
+`watranscribe-bot/` were briefly separate GitHub repos/git repos nested on
+disk under `trans/`. The user explicitly didn't want that ("why tf did u
+make 3 separate ones") — merged back into this single repo via `git
+subtree add` (preserves each one's commit history rather than flattening
+it). All three — this repo, the bot, the TWA — now live at
+`github.com/flyboy-byte/watranscribe`, public. See
+[[feedback-dont-split-repos-by-default]] in memory. TWA APK releases are
+published under this repo's GitHub Releases tab (`twa-v*` tags).
+
+### Audio playback bug hunt → architecture fix (2026-08-08)
+
+Once the TWA installed, audio playback didn't work at all — a multi-round
+debugging chase (documented in full in `DECISIONS.md` under D-013) that
+went through several wrong theories (transfer corruption, SDK level,
+codec MIME params) before landing on the real cause: audio was embedded
+as a giant base64 `data:` URI directly in the page. That's fundamentally
+the wrong architecture for anything beyond a tiny clip — it can't be
+duration-probed reliably, isn't seekable, and `fetch()` on the resulting
+URI failed outright on the user's mobile device for a multi-MB payload.
+
+**Fix**: audio is now served from a real HTTP endpoint,
+`GET /audio/<idx>`, streamed via `send_file(BytesIO(...),
+conditional=True)` for proper `Content-Type`/Range-request support. The
+`<audio>` tag just points `src=` at that URL — no client-side
+base64/Blob/data-URI handling anywhere anymore. Verified end-to-end with
+a local repro harness (real Flask app, real `/upload`, real Deepgram
+transcription of an actual WhatsApp voice note, real static JS, driven
+through actual Chromium via Playwright) before shipping: playback,
+duration, and click-to-seek all confirmed working, not just assumed.
+
+### Privacy window shortened (2026-08-08)
+
+`PERMANENT_SESSION_LIFETIME` cut from 6 hours to **30 minutes** — the
+user's explicit call, on the theory that a privacy-first tool doing a
+quick "upload → transcribe → maybe summarize → done" flow shouldn't hold
+data any longer than it takes to actually use it. The VPS purge cron job
+was updated to match (`*/10 * * * * find ... -mmin +30 -delete`, was `15
+* * * * find ... -mmin +360 -delete`) — both the app-side expiry and the
+on-disk cleanup cadence need to move together or the privacy banner's
+claim stops being true.
+
+### UI pass: numbered summary points, more breathing room (2026-08-08)
+
+Cousin's live-test feedback plus a reference screenshot of a differently
+laid-out sibling deployment (`watranscribe.replit.app`, same backend
+logic, different frontend) prompted two things: (1) replacing the
+checkmark-box bullet style for summary points with numbered points (01,
+02, 03) + thin dividers — this also fixed a real visual bug where
+Detailed/Full-level summaries (which sometimes include section-header-like
+lines from Claude, e.g. "Main Themes:") got an awkward checkmark glued in
+front of them; (2) a light spacing pass (more margin/padding on the
+privacy banner, dropzone, hero card, action row) since the page felt
+cramped. Explicitly **not** a full redesign — the user was clear about
+that ("not asking for a full complete ui rework, just suggesting ideas").
+
+See `ARCHITECTURE.md` for a current system overview and `DECISIONS.md`
+for the full decision log (including why the Meta WhatsApp bot is fully
+shelved, and why both the PWA and the TWA are kept rather than picking
+one).

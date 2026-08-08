@@ -1,10 +1,20 @@
 # WAtranscribe-bot Project State
 
-Last updated: 2026-08-06
-Updated by: Claude (session), at Logan's request to park the project
+Last updated: 2026-08-08
+Updated by: Claude (session), at Logan's request to fully shelve the project
 
 ## Current status
-**Parked** — no active work planned until Logan has more free time (post-college-return).
+**Fully shelved (2026-08-08)** — not "parked with intent to resume soon."
+The PWA Web Share Target + Android TWA (see `trans/ARCHITECTURE.md` and
+`trans/DECISIONS.md` D-006/D-009/D-012) turned out to solve the real use
+case — WhatsApp voice note → transcript, conveniently — without ever
+routing anything through Meta as a data processor, and without the
+multi-week Meta App Review gate this would have needed to go beyond a
+5-recipient sandbox test. Code and docs are kept, not deleted, in case
+the calculus changes later, but there is no active plan to resume this.
+If picking it back up, read `trans/DECISIONS.md` D-012 first for the
+full reasoning on *why* it was shelved before deciding whether that
+reasoning still holds.
 
 ## What works
 - Existing website (`trans/`, `transcribe.flyboybyte.com`): fully functional, unaffected by any of this bot work.
