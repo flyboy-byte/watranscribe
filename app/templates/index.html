@@ -101,10 +101,8 @@
 <div class="wa-hero">
   <p class="wa-tldr">{{ all_summary.strip().split('\n')[0].strip('•-*# ') }}</p>
   <ul class="wa-points">
-    {% for line in all_summary.strip().split('\n')[1:] %}
-      {% if line.strip() %}
-      <li class="wa-point"><span class="wa-check">&#10003;</span><span>{{ line.strip().strip('•-*# ') }}</span></li>
-      {% endif %}
+    {% for line in all_summary.strip().split('\n')[1:] if line.strip() %}
+      <li class="wa-point"><span class="wa-num">{{ '%02d' | format(loop.index) }}</span><span>{{ line.strip().strip('•-*# ') }}</span></li>
     {% endfor %}
   </ul>
 </div>

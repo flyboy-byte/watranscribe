@@ -34,7 +34,7 @@
     {% if player.points %}
     <ul class="wa-points">
       {% for p in player.points %}
-      <li class="wa-point"><span class="wa-check">&#10003;</span><span>{{ p }}</span></li>
+      <li class="wa-point"><span class="wa-num">{{ '%02d' | format(loop.index) }}</span><span>{{ p }}</span></li>
       {% endfor %}
     </ul>
     {% endif %}
