@@ -58,7 +58,7 @@ class Config:
     SESSION_PERMANENT = True
     SESSION_USE_SIGNER = True
     SESSION_COOKIE_NAME = "wa_session"
-    PERMANENT_SESSION_LIFETIME = 60 * 60 * 6  # 6 hours
+    PERMANENT_SESSION_LIFETIME = 60 * 30  # 30 minutes
 
     # --- Cookie security flags ----------------------------------------------
     SESSION_COOKIE_HTTPONLY = True

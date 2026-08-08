@@ -74,17 +74,17 @@ global nginx config needed.
 
 This app has no database — everything lives only in server-side session
 files (`instance/flask_session/`) that expire after
-`PERMANENT_SESSION_LIFETIME` (6 hours, see `app/config.py`). Flask-Session's
-filesystem backend only checks/deletes expiry lazily, on next access to that
-same session — an abandoned session (user never returns) would otherwise
-sit on disk indefinitely with someone's audio in it. Add a cron job so
-expired files are actually removed promptly, matching the "we don't keep
-your data" privacy notice on the page:
+`PERMANENT_SESSION_LIFETIME` (30 minutes, see `app/config.py`).
+Flask-Session's filesystem backend only checks/deletes expiry lazily, on
+next access to that same session — an abandoned session (user never
+returns) would otherwise sit on disk indefinitely with someone's audio in
+it. Add a cron job so expired files are actually removed promptly,
+matching the "we don't keep your data" privacy notice on the page:
 
 ```bash
 crontab -e
 # add:
-15 * * * * find /home/ubuntu/watranscribe/instance/flask_session -type f -mmin +360 -delete
+*/10 * * * * find /home/ubuntu/watranscribe/instance/flask_session -type f -mmin +30 -delete
 ```
 
 ## 5. Point DNS
